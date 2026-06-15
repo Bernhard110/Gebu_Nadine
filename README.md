@@ -1,5 +1,3 @@
-# Gebu_Nadine
-Spiel für Nadines Geburtstag
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -62,6 +60,16 @@ Spiel für Nadines Geburtstag
     box-shadow: 0px 0px 0px #555;
   }
 
+  .error-shake {
+    animation: shake 0.4s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
   /* --- Scene transitions --- */
   .scene {
     position: fixed;
@@ -74,18 +82,81 @@ Spiel für Nadines Geburtstag
     pointer-events: none;
   }
 
-  /* --- Scene 2: Map --- */
+  /* --- Scene 2: Intro / Living Room --- */
+  #scene-intro {
+    background: linear-gradient(180deg, #F2D6A2 0%, #D9A86C 60%, #B9824F 100%);
+    overflow: hidden;
+  }
+
+  .room-deco {
+    opacity: 0.35;
+  }
+
+  .character-sprite {
+    width: 26vw;
+    max-width: 130px;
+    transition: transform 0.3s ease;
+  }
+
+  .character-card {
+    background: #fff8ec;
+    border: 3px solid #7C2D12;
+    border-radius: 16px;
+  }
+
+  .character-img-box {
+    height: 38vh;
+    max-height: 220px;
+  }
+
+  .nadine-enter {
+    animation: slideIn 0.7s ease-out forwards;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(120%) scale(0.8); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
+  }
+
+  .dialogue-box {
+    background: #fffaf0;
+    border: 4px solid #7C2D12;
+    border-radius: 18px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+  }
+
+  .dialogue-text {
+    font-family: 'Press Start 2P', monospace;
+    line-height: 1.8;
+    min-height: 3.6em;
+  }
+
+  .continue-prompt {
+    animation: bob 1s ease-in-out infinite;
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* --- Scene 3: Map --- */
   #scene-map {
     background: linear-gradient(180deg, #FFF4D6 0%, #F7E2B8 100%);
     overflow-y: auto;
   }
 
   .station-dot {
-    transition: transform 0.2s ease;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    cursor: pointer;
   }
 
   .station-dot:active {
     transform: scale(0.92);
+  }
+
+  .station-dot.selected circle {
+    filter: drop-shadow(0 0 6px #FBBF24);
   }
 
   .path-line {
@@ -98,6 +169,12 @@ Spiel für Nadines Geburtstag
   .station-label {
     font-family: 'Press Start 2P', monospace;
   }
+
+  .info-panel {
+    background: #fffaf0;
+    border: 3px solid #7C2D12;
+    border-radius: 16px;
+  }
 </style>
 </head>
 <body class="pixel-font">
@@ -105,7 +182,7 @@ Spiel für Nadines Geburtstag
   <!-- SCENE 1: WELCOME -->
   <section id="scene-welcome" class="scene flex items-center justify-center px-6">
     <div class="flex flex-col items-center gap-8 text-center">
-      <p class="blink-text text-white text-base sm:text-2xl tracking-widest">
+      <p id="welcome-text" class="blink-text text-white text-base sm:text-2xl tracking-widest">
         Bitte Namen eingeben
       </p>
       <div class="flex flex-col items-center gap-4 w-full max-w-xs">
@@ -122,101 +199,324 @@ Spiel für Nadines Geburtstag
         >
           Bestätigen
         </button>
+        <p id="error-msg" class="text-red-500 text-[10px] sm:text-xs hidden">
+          Falscher Name! Versuch's nochmal!
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- SCENE 2: MAP -->
-  <section id="scene-map" class="scene scene-hidden flex flex-col items-center px-4 py-8 sm:py-12">
+  <!-- SCENE 2: INTRO DIALOGUE -->
+  <section id="scene-intro" class="scene scene-hidden flex flex-col items-center justify-end relative px-4 pb-6">
 
-    <div class="text-center mb-8 max-w-md">
-      <h1 class="text-amber-900 text-lg sm:text-2xl mb-3 leading-relaxed">
-        Hallo <span id="player-name" class="text-amber-700">Spieler</span>!
-      </h1>
-      <p class="font-sans text-amber-800 text-sm sm:text-base">
-        Bereit für deine Brauhaus Tour durch Köln?
-      </p>
-    </div>
+    <!-- Decorative room elements (simple shapes for "vintage living room" feel) -->
+    <div class="room-deco absolute top-6 left-6 w-16 h-20 bg-amber-900 rounded-t-full"></div>
+    <div class="room-deco absolute top-10 right-8 w-24 h-16 bg-amber-800 rounded-lg"></div>
+    <div class="room-deco absolute top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-amber-700 rounded-full"></div>
 
-    <!-- Map container -->
-    <div class="relative w-full max-w-sm">
-      <svg viewBox="0 0 300 600" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
-        <!-- Dotted path connecting stations -->
-        <path class="path-line" d="M 150 60 L 220 180 L 90 300 L 220 420 L 150 540"></path>
+    <!-- Characters -->
+    <div class="flex-1 w-full flex items-end justify-center gap-4 sm:gap-8 pb-4 relative">
 
-        <!-- Station 1 -->
-        <g class="station-dot cursor-pointer" data-station="1">
-          <circle cx="150" cy="60" r="28" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-          <text x="150" y="66" text-anchor="middle" font-size="16" fill="#fff" font-weight="bold" font-family="sans-serif">1</text>
-        </g>
+      <!-- Bennet -->
+      <div class="character-card flex flex-col items-center p-2 character-sprite">
+        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
+          <img src="assets/bennet.png" alt="Bennet" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span style="display:none;" class="text-4xl">🐯</span>
+        </div>
+        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Bennet</p>
+      </div>
 
-        <!-- Station 2 -->
-        <g class="station-dot cursor-pointer" data-station="2">
-          <circle cx="220" cy="180" r="28" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-          <text x="220" y="186" text-anchor="middle" font-size="16" fill="#fff" font-weight="bold" font-family="sans-serif">2</text>
-        </g>
+      <!-- Maria -->
+      <div class="character-card flex flex-col items-center p-2 character-sprite">
+        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
+          <img src="assets/maria.png" alt="Maria" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span style="display:none;" class="text-4xl">🧥</span>
+        </div>
+        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Maria</p>
+      </div>
 
-        <!-- Station 3 -->
-        <g class="station-dot cursor-pointer" data-station="3">
-          <circle cx="90" cy="300" r="28" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-          <text x="90" y="306" text-anchor="middle" font-size="16" fill="#fff" font-weight="bold" font-family="sans-serif">3</text>
-        </g>
-
-        <!-- Station 4 -->
-        <g class="station-dot cursor-pointer" data-station="4">
-          <circle cx="220" cy="420" r="28" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-          <text x="220" y="426" text-anchor="middle" font-size="16" fill="#fff" font-weight="bold" font-family="sans-serif">4</text>
-        </g>
-
-        <!-- Station 5 (Finish) -->
-        <g class="station-dot cursor-pointer" data-station="5">
-          <circle cx="150" cy="540" r="32" fill="#92400E" stroke="#451A03" stroke-width="3"></circle>
-          <text x="150" y="546" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold" font-family="sans-serif">Ziel</text>
-        </g>
-      </svg>
-
-      <!-- Station labels -->
-      <div class="absolute inset-0 pointer-events-none">
-        <p class="station-label absolute text-[8px] sm:text-[10px] text-amber-900" style="top: 4%; left: 60%;">Station 1</p>
-        <p class="station-label absolute text-[8px] sm:text-[10px] text-amber-900" style="top: 27%; left: 78%;">Station 2</p>
-        <p class="station-label absolute text-[8px] sm:text-[10px] text-amber-900" style="top: 47%; left: 4%;">Station 3</p>
-        <p class="station-label absolute text-[8px] sm:text-[10px] text-amber-900" style="top: 67%; left: 78%;">Station 4</p>
+      <!-- Nadine (slides in) -->
+      <div id="nadine-card" class="character-card flex flex-col items-center p-2 character-sprite opacity-0">
+        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
+          <img src="assets/nadine.png" alt="Nadine" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span style="display:none;" class="text-4xl">🎉</span>
+        </div>
+        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Nadine</p>
       </div>
     </div>
 
-    <p class="font-sans text-amber-700 text-xs sm:text-sm mt-6 text-center max-w-xs">
-      Tippe auf Station 1, um deine Tour zu starten.
-    </p>
+    <!-- Dialogue box -->
+    <div class="dialogue-box w-full max-w-md p-4 sm:p-5 relative z-10">
+      <p id="dialogue-text" class="dialogue-text text-amber-900 text-xs sm:text-sm"></p>
+      <div class="flex justify-end mt-2">
+        <p id="continue-prompt" class="continue-prompt font-sans text-amber-700 text-xs">▼ klicken</p>
+        <button id="to-map-btn" class="arcade-btn px-4 py-2 text-[10px] sm:text-xs hidden">
+          Zur Karte
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- SCENE 3: MAP -->
+  <section id="scene-map" class="scene scene-hidden flex flex-col items-center px-4 py-8 sm:py-12">
+
+    <div class="text-center mb-6 max-w-md">
+      <h1 class="text-amber-900 text-base sm:text-xl mb-2 leading-relaxed">
+        Deine Brauhaus Tour
+      </h1>
+      <p class="font-sans text-amber-800 text-xs sm:text-sm">
+        Köln-Ehrenfeld &amp; Umgebung
+      </p>
+    </div>
+
+    <div class="w-full max-w-4xl flex flex-col lg:flex-row gap-6 items-center lg:items-start justify-center">
+
+      <!-- Map -->
+      <div class="relative w-full max-w-sm">
+        <svg viewBox="0 0 300 600" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+          <!-- Dotted path connecting stations -->
+          <path class="path-line" d="M 150 60 L 220 200 L 90 340 L 200 500"></path>
+
+          <!-- Station 1: Haus Scholzen -->
+          <g class="station-dot selected" data-station="1">
+            <circle cx="150" cy="60" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
+            <text x="150" y="67" text-anchor="middle" font-size="22" font-family="sans-serif">🏠</text>
+          </g>
+
+          <!-- Station 2: Braustelle -->
+          <g class="station-dot" data-station="2">
+            <circle cx="220" cy="200" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
+            <text x="220" y="207" text-anchor="middle" font-size="22" font-family="sans-serif">🍺</text>
+          </g>
+
+          <!-- Station 3: Päffgen -->
+          <g class="station-dot" data-station="3">
+            <circle cx="90" cy="340" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
+            <text x="90" y="347" text-anchor="middle" font-size="22" font-family="sans-serif">🍻</text>
+          </g>
+
+          <!-- Station 4: Lommerzheim -->
+          <g class="station-dot" data-station="4">
+            <circle cx="200" cy="500" r="32" fill="#92400E" stroke="#451A03" stroke-width="3"></circle>
+            <text x="200" y="508" text-anchor="middle" font-size="22" font-family="sans-serif">🏛️</text>
+          </g>
+        </svg>
+
+        <!-- Station name labels -->
+        <div class="absolute inset-0 pointer-events-none">
+          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 1%; left: 55%;">Haus Scholzen</p>
+          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 30%; left: 73%;">Braustelle</p>
+          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 53%; left: 0%;">Päffgen</p>
+          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 80%; left: 58%;">Lommerzheim</p>
+        </div>
+      </div>
+
+      <!-- Info panel -->
+      <div class="info-panel w-full max-w-sm p-4 sm:p-5">
+        <p class="font-sans text-amber-700 text-[10px] sm:text-xs mb-2" id="panel-eyebrow">
+          Deine nächste Station:
+        </p>
+        <h2 id="panel-title" class="text-amber-900 text-sm sm:text-base mb-2 leading-relaxed">
+          Haus Scholzen
+        </h2>
+        <p id="panel-subtitle" class="font-sans text-amber-700 text-xs sm:text-sm mb-3 italic">
+          Ehrenfeld
+        </p>
+        <p id="panel-desc" class="font-sans text-amber-800 text-xs sm:text-sm leading-relaxed">
+          Ein urig-gemütliches Brauhaus mit langer Geschichte. Hier startet eure Tour. (Mini-Spiel folgt bald!)
+        </p>
+      </div>
+
+    </div>
 
   </section>
 
   <script>
+    // ============ SCENE 1: WELCOME ============
     const sceneWelcome = document.getElementById('scene-welcome');
+    const sceneIntro = document.getElementById('scene-intro');
     const sceneMap = document.getElementById('scene-map');
     const nameInput = document.getElementById('name-input');
     const confirmBtn = document.getElementById('confirm-btn');
-    const playerNameLabel = document.getElementById('player-name');
+    const errorMsg = document.getElementById('error-msg');
 
-    function startTour() {
-      const name = nameInput.value.trim();
-      playerNameLabel.textContent = name || 'Spieler';
-
-      sceneWelcome.classList.add('scene-hidden');
-      sceneMap.classList.remove('scene-hidden');
+    function checkName() {
+      const name = nameInput.value.trim().toLowerCase();
+      if (name === 'nadine') {
+        errorMsg.classList.add('hidden');
+        sceneWelcome.classList.add('scene-hidden');
+        sceneIntro.classList.remove('scene-hidden');
+        startDialogue();
+      } else {
+        errorMsg.classList.remove('hidden');
+        nameInput.classList.add('error-shake');
+        setTimeout(() => nameInput.classList.remove('error-shake'), 400);
+      }
     }
 
-    confirmBtn.addEventListener('click', startTour);
-
+    confirmBtn.addEventListener('click', checkName);
     nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') startTour();
+      if (e.key === 'Enter') checkName();
     });
 
-    // Placeholder: station click handlers (logic added later)
+    // ============ SCENE 2: INTRO DIALOGUE ============
+    const dialogueLines = [
+      "Hallo Nadine! Bereit für deinen Geburtstag?",
+      "Wir haben uns etwas ganz Besonderes für dich überlegt!",
+      "Wir nehmen dich mit auf eine Brauhaus-Tour durch Köln!",
+      "Und damit du dich nicht verläufst, haben wir eine Karte für dich.",
+      "Klick auf 'Weiter', um die Karte zu sehen!"
+    ];
+
+    const dialogueTextEl = document.getElementById('dialogue-text');
+    const continuePrompt = document.getElementById('continue-prompt');
+    const toMapBtn = document.getElementById('to-map-btn');
+    const nadineCard = document.getElementById('nadine-card');
+
+    let currentLine = 0;
+    let isTyping = false;
+    let typeInterval = null;
+
+    // Simple chirpy "Animal Crossing" style beep using Web Audio API
+    let audioCtx = null;
+    function playBeep() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.type = 'square';
+        const basePitch = 700;
+        osc.frequency.value = basePitch + Math.random() * 250;
+
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.06);
+      } catch (e) {
+        // Audio not available; fail silently
+      }
+    }
+
+    function typeLine(text, onComplete) {
+      isTyping = true;
+      dialogueTextEl.textContent = '';
+      continuePrompt.classList.add('hidden');
+      let i = 0;
+
+      typeInterval = setInterval(() => {
+        const char = text[i];
+        dialogueTextEl.textContent += char;
+
+        if (char && char.trim() !== '') {
+          playBeep();
+        }
+
+        i++;
+        if (i >= text.length) {
+          clearInterval(typeInterval);
+          isTyping = false;
+          continuePrompt.classList.remove('hidden');
+          if (onComplete) onComplete();
+        }
+      }, 45);
+    }
+
+    function showNextLine() {
+      if (isTyping) {
+        clearInterval(typeInterval);
+        dialogueTextEl.textContent = dialogueLines[currentLine];
+        isTyping = false;
+        continuePrompt.classList.remove('hidden');
+        return;
+      }
+
+      currentLine++;
+
+      if (currentLine >= dialogueLines.length) {
+        continuePrompt.classList.add('hidden');
+        toMapBtn.classList.remove('hidden');
+        return;
+      }
+
+      typeLine(dialogueLines[currentLine]);
+    }
+
+    function startDialogue() {
+      setTimeout(() => {
+        nadineCard.classList.remove('opacity-0');
+        nadineCard.classList.add('nadine-enter');
+      }, 300);
+
+      currentLine = 0;
+      typeLine(dialogueLines[0]);
+    }
+
+    document.querySelector('.dialogue-box').addEventListener('click', (e) => {
+      if (e.target === toMapBtn) return;
+      if (!toMapBtn.classList.contains('hidden')) return;
+      showNextLine();
+    });
+
+    toMapBtn.addEventListener('click', () => {
+      sceneIntro.classList.add('scene-hidden');
+      sceneMap.classList.remove('scene-hidden');
+    });
+
+    // ============ SCENE 3: MAP ============
+    const breweryData = {
+      "1": {
+        eyebrow: "Deine nächste Station:",
+        title: "Haus Scholzen",
+        subtitle: "Ehrenfeld",
+        desc: "Ein urig-gemütliches Brauhaus mit langer Geschichte. Hier startet eure Tour. (Mini-Spiel folgt bald!)"
+      },
+      "2": {
+        eyebrow: "Station 2:",
+        title: "Braustelle",
+        subtitle: "Kölns kleinste Brauerei",
+        desc: "Winzig, aber legendär – hier wird das Bier direkt vor Ort gebraut. (Mini-Spiel folgt bald!)"
+      },
+      "3": {
+        eyebrow: "Station 3:",
+        title: "Päffgen Brauhaus",
+        subtitle: "Traditionell und urig",
+        desc: "Klassisches Kölsch in historischem Ambiente, Friesenstraße. (Mini-Spiel folgt bald!)"
+      },
+      "4": {
+        eyebrow: "Station 4:",
+        title: "Lommerzheim",
+        subtitle: "Deutz",
+        desc: "Ikonische Fassade, kölsche Institution – euer großes Finale! (Mini-Spiel folgt bald!)"
+      }
+    };
+
+    const panelEyebrow = document.getElementById('panel-eyebrow');
+    const panelTitle = document.getElementById('panel-title');
+    const panelSubtitle = document.getElementById('panel-subtitle');
+    const panelDesc = document.getElementById('panel-desc');
+
     document.querySelectorAll('.station-dot').forEach((station) => {
       station.addEventListener('click', () => {
         const stationNumber = station.getAttribute('data-station');
-        console.log(`Station ${stationNumber} clicked`);
-        // Mini-game logic for each station will be added here
+        const data = breweryData[stationNumber];
+
+        document.querySelectorAll('.station-dot').forEach(s => s.classList.remove('selected'));
+        station.classList.add('selected');
+
+        panelEyebrow.textContent = data.eyebrow;
+        panelTitle.textContent = data.title;
+        panelSubtitle.textContent = data.subtitle;
+        panelDesc.textContent = data.desc;
+
+        // Placeholder: mini-game logic for each station will be added here
+        console.log(`Station ${stationNumber} clicked: ${data.title}`);
       });
     });
   </script>
