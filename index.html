@@ -6,756 +6,554 @@
 <title>Brauhaus Tour 🍺</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  @font-face {
-    font-family: 'Press Start 2P';
-    src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
-  }
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%; }
+.pf { font-family:'Press Start 2P',monospace; }
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; overflow-x: hidden; background: #000; height: 100%; }
-  .pixel-font { font-family: 'Press Start 2P', monospace; }
+/* ── SCENES ── */
+.scene {
+  position:fixed; inset:0; min-height:100dvh;
+  opacity:1; transition:opacity 0.5s ease; overflow:hidden;
+}
+.scene-hidden { opacity:0; pointer-events:none; }
 
-  /* ── SCENE SYSTEM ── */
-  .scene {
-    position: fixed;
-    inset: 0;
-    min-height: 100dvh;
-    opacity: 1;
-    transition: opacity 0.55s ease;
-    overflow: hidden;
-  }
-  .scene-hidden { opacity: 0; pointer-events: none; }
+/* ── MENU ── */
+#menu-btn {
+  position:fixed; top:max(14px,env(safe-area-inset-top)); right:16px;
+  z-index:9999; background:rgba(0,0,0,0.6); border:2px solid #D97706;
+  border-radius:8px; padding:7px 11px; cursor:pointer; display:none;
+  align-items:center; gap:5px; backdrop-filter:blur(4px);
+}
+#menu-btn.vis { display:flex; }
+#menu-overlay {
+  position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.78);
+  display:flex; align-items:flex-start; justify-content:flex-end;
+  padding-top:max(54px,calc(env(safe-area-inset-top)+54px)); padding-right:16px;
+  opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+#menu-overlay.open { opacity:1; pointer-events:all; }
+.menu-panel {
+  background:#1a0a00; border:3px solid #D97706; border-radius:14px;
+  padding:12px; min-width:190px; display:flex; flex-direction:column; gap:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.7);
+}
+.menu-title { font-family:'Press Start 2P',monospace; font-size:8px; color:#92400E;
+  text-align:center; padding-bottom:6px; border-bottom:1px solid #3d1a00; }
+.menu-item {
+  font-family:'Press Start 2P',monospace; font-size:9px; color:#fde68a;
+  background:rgba(217,119,6,0.15); border:1px solid #92400E; border-radius:8px;
+  padding:11px 12px; cursor:pointer; text-align:left;
+}
+.menu-item:active { background:rgba(217,119,6,0.45); }
+.menu-item.danger { color:#f87171; border-color:#7f1d1d; }
 
-  /* ── MENU OVERLAY ── */
-  #menu-btn {
-    position: fixed;
-    top: max(14px, env(safe-area-inset-top));
-    right: 16px;
-    z-index: 9999;
-    background: rgba(0,0,0,0.55);
-    border: 2px solid #D97706;
-    border-radius: 8px;
-    padding: 7px 10px;
-    cursor: pointer;
-    display: none;
-    backdrop-filter: blur(4px);
-  }
-  #menu-btn.visible { display: flex; align-items: center; gap: 5px; }
+/* ── SHARED BUTTONS ── */
+.btn {
+  font-family:'Press Start 2P',monospace; border:none; border-radius:6px;
+  cursor:pointer; transition:transform .08s,box-shadow .08s; min-height:48px;
+}
+.btn:active { transform:translate(3px,3px); box-shadow:none!important; }
+.btn-white { background:#fff; color:#000; box-shadow:4px 4px 0 #555; }
+.btn-amber { background:#D97706; color:#fff; box-shadow:4px 4px 0 #92400E; }
+.btn-green { background:#059669; color:#fff; box-shadow:4px 4px 0 #065f46; }
+.btn-red   { background:#DC2626; color:#fff; box-shadow:4px 4px 0 #7f1d1d; }
+.btn-purple{ background:#7C3AED; color:#fff; box-shadow:4px 4px 0 #4C1D95; }
 
-  #menu-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    background: rgba(0,0,0,0.75);
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding-top: max(54px, calc(env(safe-area-inset-top) + 54px));
-    padding-right: 16px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  #menu-overlay.open { opacity: 1; pointer-events: all; }
+/* ── SCENE 1: WELCOME ── */
+#scene-welcome { background:#000; display:flex; align-items:center; justify-content:center; padding:24px; }
+.blink { animation:blink 1.1s steps(1) infinite; }
+@keyframes blink { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+.arcade-input {
+  background:transparent; border:2px solid #fff; color:#fff; text-align:center;
+  caret-color:#fff; font-family:'Press Start 2P',monospace; font-size:14px;
+  padding:14px 16px; border-radius:4px; width:100%; max-width:300px;
+}
+.arcade-input:focus { outline:none; box-shadow:0 0 0 3px rgba(255,255,255,.25); }
+.shake { animation:shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
-  .menu-panel {
-    background: #1a0a00;
-    border: 3px solid #D97706;
-    border-radius: 14px;
-    padding: 12px;
-    min-width: 200px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-  }
-  .menu-item {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: #fde68a;
-    background: rgba(217,119,6,0.15);
-    border: 1px solid #92400E;
-    border-radius: 8px;
-    padding: 10px 12px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s;
-  }
-  .menu-item:active { background: rgba(217,119,6,0.4); }
-  .menu-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    color: #92400E;
-    text-align: center;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #3d1a00;
-  }
+/* ── SCENE 2: INTRO ── */
+#scene-intro {
+  background:linear-gradient(180deg,#F2D6A2 0%,#D9A86C 55%,#B9824F 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+}
+.char-wrap {
+  flex:1; width:100%; max-width:480px; display:flex; align-items:flex-end;
+  justify-content:center; gap:clamp(6px,2.5vw,20px); padding:0 10px 6px; overflow:hidden;
+}
+.char-card {
+  background:#fff8ec; border:3px solid #7C2D12; border-radius:14px;
+  display:flex; flex-direction:column; align-items:center; padding:5px 4px 4px;
+  width:clamp(72px,22vw,115px); flex-shrink:0;
+}
+.char-card.center {
+  width:clamp(88px,28vw,140px); border-color:#D97706;
+  box-shadow:0 0 16px rgba(217,119,6,.4);
+}
+.char-img-box {
+  height:clamp(110px,28vh,200px); width:100%;
+  display:flex; align-items:flex-end; justify-content:center; overflow:hidden;
+}
+.char-card.center .char-img-box { height:clamp(130px,34vh,240px); }
+.char-img-box img { width:100%; height:100%; object-fit:contain; object-position:bottom; }
+.char-label { font-family:'Press Start 2P',monospace; font-size:7px; color:#7C2D12; margin-top:4px; text-align:center; }
+.char-card.center .char-label { color:#D97706; font-size:8px; }
+#bennet-card { order:-1; }
+#nadine-card  { order:0; opacity:0; }
+#maria-card   { order:1; }
+.nadine-in { animation:ndrop .7s ease-out forwards; }
+@keyframes ndrop { from{transform:translateY(-60px) scale(.85);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+.dlg-box {
+  width:calc(100% - 24px); max-width:480px; margin-bottom:10px;
+  background:#fffaf0; border:4px solid #7C2D12; border-radius:18px;
+  padding:14px 16px 10px; box-shadow:0 6px 0 rgba(0,0,0,.18);
+  cursor:pointer; user-select:none;
+}
+.dlg-text {
+  font-family:'Press Start 2P',monospace; font-size:clamp(8px,2.2vw,11px);
+  color:#78350F; line-height:1.9; min-height:3.8em;
+}
+.bob { animation:bob 1s ease-in-out infinite; display:inline-block; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 
-  /* ── SCENE 1: WELCOME ── */
-  #scene-welcome { background: #000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+/* ── SCENE 2.5: CAULDRON ── */
+#scene-loading {
+  background:linear-gradient(180deg,#1a0a00 0%,#2d1200 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:0; padding:20px;
+}
+.cauldron-glow { filter:drop-shadow(0 0 18px #f97316aa); }
+.bubble { animation:rise var(--dur) ease-in infinite; animation-delay:var(--delay); opacity:0; }
+@keyframes rise { 0%{transform:translateY(0) scale(1);opacity:.8} 100%{transform:translateY(-42px) scale(1.4);opacity:0} }
+.ingr { font-family:'Press Start 2P',monospace; font-size:clamp(8px,2.2vw,11px);
+  color:#fde68a; text-align:center; opacity:0; transform:translateY(-18px);
+  transition:opacity .5s,transform .55s; padding:2px 0; }
+.ingr.dropping { opacity:1; transform:translateY(0); }
+.ingr.dropped  { opacity:.3; transform:translateY(6px); color:#92400E; transition:opacity 1s,transform .8s,color .8s; }
+.bar-track { background:#3d1a00; border:2px solid #92400E; border-radius:999px;
+  overflow:hidden; width:min(320px,85vw); height:20px; }
+#bar-fill { height:100%; background:linear-gradient(90deg,#f97316,#fbbf24);
+  border-radius:999px; width:0%; transition:width .1s linear; }
 
-  .blink-text { animation: blink 1.1s steps(1) infinite; }
-  @keyframes blink { 0%,50% { opacity:1; } 50.01%,100% { opacity:0; } }
+/* ── SCENE 2.8: SCRAMBLE PROLOGUE ── */
+#scene-scramble {
+  background:linear-gradient(135deg,#1a0a00 0%,#2d1a00 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:20px; gap:16px;
+}
+.scramble-title { font-family:'Press Start 2P',monospace; color:#fde68a; font-size:clamp(9px,2.5vw,13px); text-align:center; line-height:1.8; }
+.scramble-subtitle { font-family:'Press Start 2P',monospace; color:#92400E; font-size:8px; text-align:center; line-height:1.8; }
+/* Source tiles (letters to drag from) */
+.tile-pool { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:340px; }
+/* Answer slots */
+.answer-slots { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:340px; }
+.letter-tile {
+  font-family:'Press Start 2P',monospace; font-size:clamp(14px,4.5vw,22px);
+  width:clamp(36px,10vw,50px); height:clamp(36px,10vw,50px);
+  background:#D97706; color:#fff; border:3px solid #92400E;
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; user-select:none; box-shadow:3px 3px 0 #451A03;
+  transition:transform .1s,background .1s;
+}
+.letter-tile:active { transform:scale(.9); }
+.letter-tile.selected { background:#059669; border-color:#065f46; box-shadow:3px 3px 0 #022c22; }
+.letter-tile.empty { background:#3d1a00; color:#5c3d00; border-color:#5c3d00; cursor:default; box-shadow:none; }
+.answer-slot {
+  font-family:'Press Start 2P',monospace; font-size:clamp(14px,4.5vw,22px);
+  width:clamp(36px,10vw,50px); height:clamp(36px,10vw,50px);
+  background:#1a0a00; color:#fde68a; border:3px solid #92400E;
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; user-select:none;
+}
+.answer-slot.filled { background:#7C2D12; color:#fff; border-color:#D97706; }
+.answer-slot.wrong-shake { animation:shake .4s ease; }
 
-  .arcade-input {
-    background: transparent;
-    border: 2px solid #fff;
-    color: #fff;
-    text-align: center;
-    caret-color: #fff;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    padding: 14px 16px;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 300px;
-  }
-  .arcade-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+/* Bierdeckel overlay */
+#bierdeckel-overlay {
+  position:fixed; inset:0; z-index:8888; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.7); opacity:0; pointer-events:none; transition:opacity .5s;
+}
+#bierdeckel-overlay.show { opacity:1; pointer-events:all; }
+.bierdeckel {
+  background:#fffaf0; border:6px solid #7C2D12; border-radius:50%;
+  width:min(320px,88vw); height:min(320px,88vw);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:28px; text-align:center; box-shadow:0 0 40px rgba(0,0,0,.5);
+  cursor:pointer;
+}
+.bierdeckel-icon { font-size:40px; margin-bottom:12px; }
+.bierdeckel-text { font-family:'Press Start 2P',monospace; font-size:clamp(7px,2vw,9px);
+  color:#7C2D12; line-height:2; }
+.bierdeckel-tap { font-family:'Press Start 2P',monospace; font-size:8px; color:#D97706;
+  margin-top:14px; animation:bob 1s ease-in-out infinite; display:inline-block; }
 
-  .arcade-btn {
-    background: #fff;
-    color: #000;
-    font-family: 'Press Start 2P', monospace;
-    box-shadow: 4px 4px 0 #555;
-    transition: transform 0.08s, box-shadow 0.08s;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    padding: 14px 20px;
-    font-size: 11px;
-    min-height: 48px;
-  }
-  .arcade-btn:active { transform: translate(4px,4px); box-shadow: none; }
+/* ── SCENE 3: MAP ── */
+#scene-map {
+  background:linear-gradient(180deg,#ddf0f8 0%,#c8e4f0 100%);
+  overflow-y:auto; display:flex; flex-direction:column; align-items:center;
+  padding-bottom:max(24px,env(safe-area-inset-bottom));
+}
+.rhine { fill:#5ab4d6; opacity:.75; }
+.road  { stroke:#c9b99a; stroke-width:1.5; fill:none; opacity:.45; }
+.road-main { stroke:#b0996e; stroke-width:3; fill:none; opacity:.55; }
+.road-ring { stroke:#b0996e; stroke-width:2.5; fill:none; opacity:.45; }
+.path-seg { stroke:#D97706; stroke-width:5; stroke-dasharray:11 7; fill:none; opacity:0; transition:opacity .9s; }
+.path-seg.vis { opacity:1; }
+.mid-evt { opacity:0; transition:opacity .6s; cursor:pointer; }
+.mid-evt.vis { opacity:1; }
+.stn-mk  { opacity:0; transition:opacity .6s; cursor:pointer; }
+.stn-mk.vis { opacity:1; }
+.info-panel { background:#fffaf0; border:3px solid #7C2D12; border-radius:16px; padding:16px; }
+.action-btn {
+  font-family:'Press Start 2P',monospace; font-size:10px; background:#D97706;
+  color:#fff; border:none; border-radius:8px; box-shadow:4px 4px 0 #92400E;
+  padding:14px 16px; min-height:52px; width:100%; text-align:left;
+  cursor:pointer; line-height:1.6; transition:transform .08s,box-shadow .08s;
+}
+.action-btn:active { transform:translate(4px,4px); box-shadow:none; }
 
-  .btn-amber {
-    background: #D97706;
-    color: #fff;
-    box-shadow: 4px 4px 0 #92400E;
-  }
-  .btn-amber:active { transform: translate(4px,4px); box-shadow: none; }
-
-  .error-shake { animation: shake 0.4s ease; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
-
-  /* ── SCENE 2: INTRO ── */
-  #scene-intro {
-    background: linear-gradient(180deg, #F2D6A2 0%, #D9A86C 55%, #B9824F 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-  }
-
-  .character-wrap {
-    flex: 1;
-    width: 100%;
-    max-width: 480px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: clamp(6px, 2.5vw, 20px);
-    padding: 0 10px 6px;
-    overflow: hidden;
-  }
-
-  /* Side chars (Bennet, Maria) */
-  .char-card {
-    background: #fff8ec;
-    border: 3px solid #7C2D12;
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 5px 4px 4px;
-    width: clamp(72px, 22vw, 115px);
-    flex-shrink: 0;
-  }
-  /* Center card (Nadine) — bigger */
-  .char-card.center {
-    width: clamp(88px, 28vw, 140px);
-    border-color: #D97706;
-    border-width: 3px;
-    box-shadow: 0 0 16px rgba(217,119,6,0.4);
-    order: 0;
-  }
-
-  .char-img-box {
-    height: clamp(110px, 28vh, 200px);
-    width: 100%;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    overflow: hidden;
-  }
-  /* Nadine gets slightly taller box */
-  .char-card.center .char-img-box {
-    height: clamp(130px, 34vh, 240px);
-  }
-  .char-img-box img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
-
-  .char-label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: #7C2D12;
-    margin-top: 4px;
-    text-align: center;
-  }
-  .char-card.center .char-label { color: #D97706; font-size: 8px; }
-
-  /* Bennet left, Maria right, Nadine center */
-  #bennet-card { order: -1; }
-  #nadine-card  { order: 0; opacity: 0; }
-  #maria-card   { order: 1; }
-
-  .nadine-slide-in { animation: slideInTop 0.7s ease-out forwards; }
-  @keyframes slideInTop {
-    from { transform: translateY(-60px) scale(0.85); opacity: 0; }
-    to   { transform: translateY(0) scale(1); opacity: 1; }
-  }
-
-  .dialogue-box {
-    width: calc(100% - 24px);
-    max-width: 480px;
-    margin-bottom: 10px;
-    background: #fffaf0;
-    border: 4px solid #7C2D12;
-    border-radius: 18px;
-    padding: 14px 16px 10px;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
-    cursor: pointer;
-    user-select: none;
-  }
-  .dialogue-text {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(8px, 2.2vw, 11px);
-    color: #78350F;
-    line-height: 1.9;
-    min-height: 3.8em;
-  }
-  .continue-prompt { animation: bob 1s ease-in-out infinite; display: inline-block; }
-  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-
-  /* ── SCENE 2.5: CAULDRON ── */
-  #scene-loading {
-    background: linear-gradient(180deg, #1a0a00 0%, #2d1200 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    padding: 20px;
-  }
-
-  .cauldron-glow { filter: drop-shadow(0 0 18px #f97316aa); }
-
-  .bubble {
-    animation: rise var(--dur) ease-in infinite;
-    animation-delay: var(--delay);
-    opacity: 0;
-  }
-  @keyframes rise {
-    0%   { transform:translateY(0) scale(1);    opacity:0.8; }
-    100% { transform:translateY(-42px) scale(1.4); opacity:0; }
-  }
-
-  .ingredient {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(8px, 2.2vw, 11px);
-    color: #fde68a;
-    text-align: center;
-    opacity: 0;
-    transform: translateY(-18px);
-    transition: opacity 0.5s ease, transform 0.55s ease;
-    padding: 2px 0;
-  }
-  .ingredient.dropping { opacity: 1; transform: translateY(0); }
-  .ingredient.dropped  { opacity: 0.3; transform: translateY(6px); color: #92400E;
-    transition: opacity 1s, transform 0.8s, color 0.8s; }
-
-  .loading-bar-track {
-    background: #3d1a00;
-    border: 2px solid #92400E;
-    border-radius: 999px;
-    overflow: hidden;
-    width: min(320px, 85vw);
-    height: 20px;
-  }
-  #loading-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #f97316, #fbbf24);
-    border-radius: 999px;
-    width: 0%;
-    transition: width 0.1s linear;
-  }
-
-  /* ── SCENE 3: MAP ── */
-  #scene-map {
-    background: linear-gradient(180deg, #ddf0f8 0%, #c8e4f0 100%);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
-  }
-
-  .rhine { fill: #5ab4d6; opacity: 0.75; }
-  .rhine-shade { fill: #7ec8e3; opacity: 0.35; }
-  .road { stroke: #c9b99a; stroke-width: 1.5; fill: none; opacity: 0.45; }
-  .road-main { stroke: #b0996e; stroke-width: 3; fill: none; opacity: 0.55; }
-  .road-ring  { stroke: #b0996e; stroke-width: 2.5; fill: none; opacity: 0.45; }
-
-  .path-seg {
-    stroke: #D97706;
-    stroke-width: 5;
-    stroke-dasharray: 11 7;
-    fill: none;
-    opacity: 0;
-    transition: opacity 0.9s ease;
-  }
-  .path-seg.visible { opacity: 1; }
-
-  .mid-event { opacity:0; transition:opacity 0.6s ease; cursor:pointer; }
-  .mid-event.visible { opacity:1; }
-
-  .station-marker { opacity:0; transition:opacity 0.6s ease; cursor:pointer; }
-  .station-marker.visible { opacity:1; }
-
-  @keyframes pulse {
-    0%,100% { r:24; opacity:0.45; }
-    50%      { r:30; opacity:0.12; }
-  }
-
-  .info-panel {
-    background: #fffaf0;
-    border: 3px solid #7C2D12;
-    border-radius: 16px;
-    padding: 16px;
-  }
-
-  /* Touch-friendly action button */
-  .action-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    background: #D97706;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 4px 4px 0 #92400E;
-    padding: 14px 16px;
-    min-height: 52px;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    line-height: 1.6;
-    transition: transform 0.08s, box-shadow 0.08s;
-  }
-  .action-btn:active { transform:translate(4px,4px); box-shadow:none; }
+/* ── MINIGAME OVERLAY ── */
+#mg-overlay {
+  position:fixed; inset:0; z-index:7777; background:rgba(0,0,0,.92);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:20px; opacity:0; pointer-events:none; transition:opacity .4s;
+  overflow-y:auto;
+}
+#mg-overlay.open { opacity:1; pointer-events:all; }
+.mg-box {
+  background:#1a0a00; border:4px solid #D97706; border-radius:20px;
+  padding:20px 18px; width:100%; max-width:420px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.mg-title { font-family:'Press Start 2P',monospace; font-size:clamp(9px,2.5vw,12px);
+  color:#fde68a; text-align:center; line-height:1.8; }
+.mg-subtitle { font-family:'Press Start 2P',monospace; font-size:8px; color:#92400E; text-align:center; line-height:1.8; }
+.mg-body { font-family:sans-serif; font-size:13px; color:#fde68a; text-align:center; line-height:1.6; width:100%; }
+/* Zeitreise scanner */
+.scan-input {
+  background:#000; border:2px solid #059669; color:#4ade80;
+  font-family:'Press Start 2P',monospace; font-size:11px;
+  padding:12px 14px; border-radius:6px; width:100%; text-align:center;
+}
+.scan-input:focus { outline:none; box-shadow:0 0 0 3px rgba(5,150,105,.3); }
+/* Horse cart game */
+#horse-canvas { border:3px solid #D97706; border-radius:8px; image-rendering:pixelated; background:#87CEEB; }
+/* Compass game */
+#compass-wrap { position:relative; width:220px; height:220px; flex-shrink:0; }
+#compass-svg { width:100%; height:100%; cursor:grab; }
+/* Türsteher game */
+.big-nae-btn {
+  font-family:'Press Start 2P',monospace; font-size:clamp(16px,4vw,22px);
+  background:#DC2626; color:#fff; border:none; border-radius:12px;
+  box-shadow:6px 6px 0 #7f1d1d; padding:20px 28px; cursor:pointer;
+  transition:transform .08s,box-shadow .08s; width:100%; min-height:80px;
+  letter-spacing:.05em;
+}
+.big-nae-btn:active { transform:translate(6px,6px); box-shadow:none; }
+.smash-count { font-family:'Press Start 2P',monospace; font-size:28px; color:#fde68a; }
 </style>
 </head>
-<body class="pixel-font">
+<body class="pf">
 
-<!-- ══ HAMBURGER MENU (shown after login) ══ -->
+<!-- ══ MENU BUTTON ══ -->
 <button id="menu-btn" aria-label="Menü">
-  <span style="font-size:16px; color:#D97706;">☰</span>
-  <span style="font-family:'Press Start 2P',monospace; font-size:7px; color:#fde68a;">Menü</span>
+  <span style="font-size:16px;color:#D97706">☰</span>
+  <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#fde68a">Menü</span>
 </button>
-
 <div id="menu-overlay">
   <div class="menu-panel">
     <p class="menu-title">⚡ Schnellreise</p>
-    <button class="menu-item" onclick="jumpToStation(0)">🏠 Start (Ehrenfeld)</button>
-    <button class="menu-item" onclick="jumpToStation(2)">🏠 Station 1 – Haus Scholzen</button>
-    <button class="menu-item" onclick="jumpToStation(4)">🍻 Station 2 – Päffgen</button>
-    <button class="menu-item" onclick="jumpToStation(6)">🐳 Station 3 – Sünner i. Walfisch</button>
-    <button class="menu-item" onclick="jumpToStation(8)">🏆 Station 4 – Lommerzheim</button>
-    <button class="menu-item" style="color:#f87171; border-color:#7f1d1d;"
-      onclick="resetProgress()">🗑 Fortschritt zurücksetzen</button>
+    <button class="menu-item" onclick="menuJump(2)">Station 1</button>
+    <button class="menu-item" onclick="menuJump(4)">Station 2</button>
+    <button class="menu-item" onclick="menuJump(6)">Station 3</button>
+    <button class="menu-item" onclick="menuJump(8)">Station 4</button>
+    <button class="menu-item danger" onclick="menuReset()">🗑 Zurücksetzen</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- SCENE 1 · WELCOME                          -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══ SCENE 1: WELCOME ══ -->
 <section id="scene-welcome" class="scene">
-  <div class="flex flex-col items-center gap-8 text-center w-full max-w-xs mx-auto">
-    <p class="blink-text text-white text-sm sm:text-xl tracking-widest leading-loose">
-      Bitte Namen<br>eingeben
-    </p>
-    <div class="flex flex-col items-center gap-4 w-full">
-      <input id="name-input" type="text" maxlength="20"
-        class="arcade-input" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">
-      <button id="confirm-btn" class="arcade-btn w-full">Bestätigen</button>
-      <p id="error-msg" class="text-red-400 text-[10px] leading-relaxed hidden">
-        Falscher Name!<br>Versuch's nochmal! 😅
-      </p>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center;width:100%;max-width:300px">
+    <p class="blink pf" style="color:#fff;font-size:clamp(11px,3.5vw,18px);letter-spacing:.12em;line-height:1.8">Bitte Namen<br>eingeben</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:100%">
+      <input id="name-input" class="arcade-input" type="text" maxlength="20" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button id="confirm-btn" class="btn btn-white pf" style="width:100%;font-size:11px;padding:14px">Bestätigen</button>
+      <p id="error-msg" style="color:#f87171;font-size:10px;line-height:1.8;display:none">Falscher Name!<br>Versuch's nochmal! 😅</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- SCENE 2 · INTRO DIALOGUE                   -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══ SCENE 2: INTRO ══ -->
 <section id="scene-intro" class="scene scene-hidden">
-  <div class="absolute top-4 left-4 w-12 h-16 bg-amber-900 rounded-t-full opacity-25 pointer-events-none"></div>
-  <div class="absolute top-6 right-5 w-16 h-12 bg-amber-800 rounded-lg opacity-20 pointer-events-none"></div>
-
-  <!-- Characters: Bennet | Nadine (center) | Maria -->
-  <div class="character-wrap">
+  <div style="position:absolute;top:16px;left:16px;width:48px;height:64px;background:#92400E;border-radius:24px 24px 0 0;opacity:.25;pointer-events:none"></div>
+  <div style="position:absolute;top:24px;right:20px;width:64px;height:48px;background:#78350F;border-radius:8px;opacity:.2;pointer-events:none"></div>
+  <div class="char-wrap">
     <div id="bennet-card" class="char-card">
-      <div class="char-img-box">
-        <img src="assets/bennet.png" alt="Bennet" onerror="this.style.display='none'">
-      </div>
+      <div class="char-img-box"><img src="assets/bennet.png" alt="Bennet" onerror="this.style.display='none'"></div>
       <span class="char-label">Bennet</span>
     </div>
-
     <div id="nadine-card" class="char-card center">
-      <div class="char-img-box">
-        <img src="assets/nadine.png" alt="Nadine" onerror="this.style.display='none'">
-      </div>
+      <div class="char-img-box"><img src="assets/nadine.png" alt="Nadine" onerror="this.style.display='none'"></div>
       <span class="char-label">Nadine ⭐</span>
     </div>
-
     <div id="maria-card" class="char-card">
-      <div class="char-img-box">
-        <img src="assets/maria.png" alt="Maria" onerror="this.style.display='none'">
-      </div>
+      <div class="char-img-box"><img src="assets/maria.png" alt="Maria" onerror="this.style.display='none'"></div>
       <span class="char-label">Maria</span>
     </div>
   </div>
-
-  <!-- Dialogue -->
-  <div id="dialogue-box" class="dialogue-box mx-3">
-    <p id="dialogue-text" class="dialogue-text"></p>
-    <div class="flex justify-end mt-2 items-center gap-3">
-      <span id="continue-prompt" class="continue-prompt text-amber-700 text-[10px]">▼ tippen</span>
-      <button id="to-loading-btn" class="btn-amber arcade-btn px-4 py-2 text-[9px] hidden">
-        Zur Karte! 🗺️
-      </button>
+  <div id="dlg-box" class="dlg-box" style="margin:0 12px 12px">
+    <p id="dlg-text" class="dlg-text"></p>
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px">
+      <span id="dlg-prompt" class="bob pf" style="color:#D97706;font-size:10px">▼ tippen</span>
+      <button id="to-loading-btn" class="btn btn-amber pf" style="padding:10px 16px;font-size:9px;display:none">Zur Karte! 🗺️</button>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- SCENE 2.5 · CAULDRON LOADING               -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══ SCENE 2.5: CAULDRON LOADING ══ -->
 <section id="scene-loading" class="scene scene-hidden">
-  <p class="pixel-font text-amber-400 text-[9px] sm:text-[11px] text-center px-4 mb-3 leading-loose">
-    Eine mausige Brauhaustour<br>wird gebraut...
-  </p>
-
-  <div id="ingredients-zone" class="flex flex-col items-center gap-1 mb-2 min-h-[90px] justify-end">
-    <span class="ingredient">🎉 Gute Laune...</span>
-    <span class="ingredient">🍺 Bierdurst...</span>
-    <span class="ingredient">😌 Kölsche Gelassenheit...</span>
-    <span class="ingredient">🚬 Zigaretten...</span>
-    <span class="ingredient">🥨 Ein halver Hahn...</span>
+  <p class="pf" style="color:#f59e0b;font-size:clamp(8px,2.2vw,11px);text-align:center;line-height:1.8;margin-bottom:8px">Eine mausige Brauhaustour<br>wird gebraut...</p>
+  <div id="ingr-zone" style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:8px;min-height:90px;justify-content:flex-end">
+    <span class="ingr">🎉 Gute Laune...</span>
+    <span class="ingr">🍺 Bierdurst...</span>
+    <span class="ingr">😌 Kölsche Gelassenheit...</span>
+    <span class="ingr">🚬 Zigaretten...</span>
+    <span class="ingr">🥨 Ein halver Hahn...</span>
   </div>
-
-  <svg viewBox="0 0 200 160" width="min(220px, 58vw)" class="cauldron-glow mb-3" xmlns="http://www.w3.org/2000/svg">
-    <circle class="bubble" cx="80"  cy="52" r="4"   fill="#fde68a" style="--dur:1.4s;--delay:0s"/>
-    <circle class="bubble" cx="100" cy="47" r="5"   fill="#fed7aa" style="--dur:1.8s;--delay:0.4s"/>
-    <circle class="bubble" cx="120" cy="54" r="3"   fill="#fde68a" style="--dur:1.2s;--delay:0.8s"/>
-    <circle class="bubble" cx="90"  cy="50" r="3.5" fill="#fdba74" style="--dur:1.6s;--delay:1.1s"/>
-    <rect x="72"  y="138" width="10" height="18" rx="3" fill="#5c2d0a"/>
+  <svg viewBox="0 0 200 160" width="min(220px,58vw)" class="cauldron-glow" style="margin-bottom:10px" xmlns="http://www.w3.org/2000/svg">
+    <circle class="bubble" cx="80" cy="52" r="4" fill="#fde68a" style="--dur:1.4s;--delay:0s"/>
+    <circle class="bubble" cx="100" cy="47" r="5" fill="#fed7aa" style="--dur:1.8s;--delay:.4s"/>
+    <circle class="bubble" cx="120" cy="54" r="3" fill="#fde68a" style="--dur:1.2s;--delay:.8s"/>
+    <circle class="bubble" cx="90" cy="50" r="3.5" fill="#fdba74" style="--dur:1.6s;--delay:1.1s"/>
+    <rect x="72" y="138" width="10" height="18" rx="3" fill="#5c2d0a"/>
     <rect x="118" y="138" width="10" height="18" rx="3" fill="#5c2d0a"/>
     <ellipse cx="100" cy="110" rx="62" ry="45" fill="#3d1a00" stroke="#92400E" stroke-width="4"/>
-    <ellipse cx="100" cy="74"  rx="50" ry="14" fill="#c2410c" opacity="0.9"/>
-    <ellipse cx="100" cy="74"  rx="35" ry="8"  fill="#ea580c" opacity="0.6"/>
-    <ellipse cx="85"  cy="72"  rx="8"  ry="4"  fill="#fb923c" opacity="0.5"/>
-    <ellipse cx="115" cy="73"  rx="6"  ry="3"  fill="#fb923c" opacity="0.4"/>
-    <ellipse cx="100" cy="70"  rx="55" ry="16" fill="none" stroke="#92400E" stroke-width="5"/>
-    <ellipse cx="100" cy="70"  rx="55" ry="16" fill="#7c2d12" opacity="0.4"/>
+    <ellipse cx="100" cy="74" rx="50" ry="14" fill="#c2410c" opacity=".9"/>
+    <ellipse cx="100" cy="74" rx="35" ry="8" fill="#ea580c" opacity=".6"/>
+    <ellipse cx="85" cy="72" rx="8" ry="4" fill="#fb923c" opacity=".5"/>
+    <ellipse cx="115" cy="73" rx="6" ry="3" fill="#fb923c" opacity=".4"/>
+    <ellipse cx="100" cy="70" rx="55" ry="16" fill="none" stroke="#92400E" stroke-width="5"/>
+    <ellipse cx="100" cy="70" rx="55" ry="16" fill="#7c2d12" opacity=".4"/>
     <path d="M 45 90 Q 28 75 38 62" stroke="#92400E" stroke-width="5" fill="none" stroke-linecap="round"/>
     <path d="M 155 90 Q 172 75 162 62" stroke="#92400E" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <ellipse cx="75" cy="95" rx="12" ry="20" fill="white" opacity="0.07" transform="rotate(-20,75,95)"/>
+    <ellipse cx="75" cy="95" rx="12" ry="20" fill="white" opacity=".07" transform="rotate(-20,75,95)"/>
   </svg>
-
-  <div class="loading-bar-track">
-    <div id="loading-bar-fill"></div>
-  </div>
-  <p class="pixel-font text-amber-600 text-[8px] mt-2" id="loading-pct">0%</p>
+  <div class="bar-track"><div id="bar-fill"></div></div>
+  <p id="bar-pct" class="pf" style="color:#D97706;font-size:8px;margin-top:8px">0%</p>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- SCENE 3 · MAP                              -->
-<!-- ═══════════════════════════════════════════ -->
-<section id="scene-map" class="scene scene-hidden">
+<!-- ══ SCENE 2.8: SCRAMBLE PROLOGUE ══ -->
+<section id="scene-scramble" class="scene scene-hidden">
+  <p class="scramble-title">🧩 Das Veedel-Scramble</p>
+  <p class="scramble-subtitle">Ordne die Buchstaben!<br>Welches Veedel ist unser Start?</p>
+  <div id="pool" class="tile-pool"></div>
+  <p class="pf" style="color:#92400E;font-size:8px;margin:4px 0">↓ Deine Antwort ↓</p>
+  <div id="slots" class="answer-slots"></div>
+  <button id="check-btn" class="btn btn-amber pf" style="padding:12px 24px;font-size:10px;margin-top:4px">Prüfen ✓</button>
+  <p id="scramble-err" class="pf" style="color:#f87171;font-size:9px;display:none">Fast! Versuch nochmal! 😄</p>
+</section>
 
-  <div class="text-center pt-5 pb-2 px-4">
-    <h1 class="text-amber-900 text-xs sm:text-base mb-1 leading-loose">Deine Brauhaus Tour 🍺</h1>
-    <p class="font-sans text-amber-700 text-xs">Köln – Ehrenfeld bis Deutz</p>
+<!-- ══ BIERDECKEL OVERLAY ══ -->
+<div id="bierdeckel-overlay">
+  <div class="bierdeckel" id="bierdeckel-card">
+    <div class="bierdeckel-icon">🍺</div>
+    <p class="bierdeckel-text">Exakt! Ehrenfeld ist unser Startpunkt. Und die älteste Traditions-Adresse dort wartet auf uns. Schuhe an, wir gehen los zum Haus Scholzen!</p>
+    <span class="bierdeckel-tap">▼ Tippen zum Weitermachen</span>
   </div>
+</div>
 
-  <div class="w-full max-w-4xl flex flex-col lg:flex-row gap-4 px-3 pb-6 items-start justify-center">
-
-    <!-- SVG MAP -->
-    <div class="relative w-full max-w-md mx-auto flex-shrink-0">
-      <svg id="cologne-map" viewBox="0 0 360 560" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
-
-        <!-- ── Sky background ── -->
+<!-- ══ SCENE 3: MAP ══ -->
+<section id="scene-map" class="scene scene-hidden">
+  <div style="text-align:center;padding:18px 16px 8px">
+    <h1 class="pf" style="color:#78350F;font-size:clamp(9px,2.8vw,14px);margin:0 0 4px;line-height:1.6">Deine Brauhaus Tour 🍺</h1>
+    <p style="font-family:sans-serif;color:#92400E;font-size:12px;margin:0">Köln – Ehrenfeld bis Deutz</p>
+  </div>
+  <div style="width:100%;max-width:860px;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 12px 24px">
+    <!-- MAP SVG -->
+    <div style="position:relative;width:100%;max-width:400px">
+      <svg id="cologne-map" viewBox="0 0 360 560" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
         <rect width="360" height="560" fill="#ddf0f8"/>
+        <!-- Left bank -->
+        <path d="M 0 0 L 178 0 C 183 70 179 150 185 220 C 189 280 181 360 187 430 C 191 480 184 530 187 560 L 0 560 Z" fill="#f0ebe0"/>
+        <!-- Right bank -->
+        <path d="M 360 0 L 207 0 C 202 70 206 150 200 220 C 196 280 204 360 198 430 C 194 480 201 530 198 560 L 360 560 Z" fill="#f0ebe0"/>
+        <!-- Rhine -->
+        <path d="M 178 0 C 183 70 179 150 185 220 C 189 280 181 360 187 430 C 191 480 184 530 187 560 L 207 560 C 201 530 208 480 204 430 C 198 360 206 280 200 220 C 194 150 198 70 193 0 Z" class="rhine"/>
+        <path d="M 184 90 C 186 140 183 200 186 260" stroke="white" stroke-width="2" fill="none" opacity=".18" stroke-linecap="round"/>
+        <text x="193" y="310" fill="#3d8fb5" font-size="8" text-anchor="middle" font-family="sans-serif" font-weight="bold" opacity=".65" transform="rotate(-90,193,310)">R H E I N</text>
 
-        <!-- ── Left bank ground ── -->
-        <path d="M 0 0 L 175 0 C 180 60 176 140 182 210
-                   C 186 270 178 350 184 420
-                   C 188 470 181 520 184 560
-                   L 0 560 Z"
-              fill="#f0ebe0"/>
+        <!-- Roads left bank -->
+        <line x1="0" y1="90" x2="178" y2="90" class="road-main"/>
+        <path d="M 0 175 Q 65 158 125 148 L 178 143" class="road-main" stroke="#b0996e" stroke-width="2.5" fill="none" opacity=".5"/>
+        <path d="M 30 225 Q 85 185 145 175 Q 168 171 178 170" class="road-ring" fill="none"/>
+        <path d="M 0 315 Q 55 285 115 275 Q 155 270 178 267" class="road-ring" fill="none"/>
+        <line x1="60" y1="55" x2="60" y2="310" class="road"/>
+        <line x1="25" y1="0" x2="25" y2="290" class="road"/>
+        <line x1="112" y1="0" x2="112" y2="210" class="road"/>
+        <line x1="148" y1="165" x2="178" y2="225" class="road"/>
+        <path d="M 103 205 Q 133 190 161 195 L 178 200" class="road-main" fill="none"/>
+        <line x1="123" y1="255" x2="178" y2="255" class="road"/>
+        <!-- Roads right bank -->
+        <line x1="232" y1="0" x2="232" y2="560" class="road"/>
+        <line x1="272" y1="0" x2="272" y2="560" class="road"/>
+        <line x1="318" y1="0" x2="318" y2="560" class="road"/>
+        <line x1="207" y1="205" x2="360" y2="205" class="road-main"/>
+        <line x1="207" y1="295" x2="360" y2="295" class="road-main"/>
+        <line x1="207" y1="375" x2="360" y2="375" class="road"/>
 
-        <!-- ── Right bank ground ── -->
-        <path d="M 360 0 L 205 0 C 200 60 204 140 198 210
-                   C 194 270 202 350 196 420
-                   C 192 470 199 520 196 560
-                   L 360 560 Z"
-              fill="#f0ebe0"/>
+        <!-- Bridges -->
+        <!-- Hohenzollernbrücke ~y=215 -->
+        <rect x="178" y="213" width="29" height="7" fill="#b0996e" rx="2" opacity=".85"/>
+        <line x1="181" y1="213" x2="181" y2="220" stroke="#8b7355" stroke-width="1"/>
+        <line x1="186" y1="213" x2="186" y2="220" stroke="#8b7355" stroke-width="1"/>
+        <line x1="191" y1="213" x2="191" y2="220" stroke="#8b7355" stroke-width="1"/>
+        <line x1="196" y1="213" x2="196" y2="220" stroke="#8b7355" stroke-width="1"/>
+        <line x1="201" y1="213" x2="201" y2="220" stroke="#8b7355" stroke-width="1"/>
+        <text x="193" y="209" fill="#7a6545" font-size="5" text-anchor="middle" font-family="sans-serif">Hohenzollernbrücke</text>
 
-        <!-- ── Rhine river (main body) ── -->
-        <path d="M 175 0 C 180 60 176 140 182 210
-                   C 186 270 178 350 184 420
-                   C 188 470 181 520 184 560
-                 L 205 560
-                 C 199 520 206 470 202 420
-                   C 196 350 204 270 198 210
-                   C 192 140 196 60 191 0 Z"
-              class="rhine"/>
+        <!-- Deutzer Brücke ~y=328 -->
+        <rect x="178" y="326" width="29" height="8" fill="#b0996e" rx="2" opacity=".9"/>
+        <line x1="181" y1="326" x2="181" y2="334" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="187" y1="326" x2="187" y2="334" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="193" y1="326" x2="193" y2="334" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="199" y1="326" x2="199" y2="334" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="204" y1="326" x2="204" y2="334" stroke="#8b7355" stroke-width="1.5"/>
+        <text x="193" y="322" fill="#7a6545" font-size="5" text-anchor="middle" font-family="sans-serif">Deutzer Brücke</text>
 
-        <!-- Rhine shimmer -->
-        <path d="M 181 80 C 183 130 180 190 183 250"
-              stroke="white" stroke-width="2" fill="none" opacity="0.18" stroke-linecap="round"/>
-        <path d="M 188 100 C 190 160 187 220 190 300"
-              stroke="white" stroke-width="1.5" fill="none" opacity="0.12" stroke-linecap="round"/>
+        <!-- Severinsbrücke ~y=428 -->
+        <rect x="178" y="424" width="27" height="6" fill="#b0996e" rx="2" opacity=".7"/>
+        <text x="192" y="420" fill="#7a6545" font-size="5" text-anchor="middle" font-family="sans-serif">Severinsbrücke</text>
 
-        <!-- ── RHEIN label ── -->
-        <text x="190" y="300" fill="#3d8fb5" font-size="8" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold" opacity="0.7"
-              transform="rotate(-90,190,300)">R H E I N</text>
-
-        <!-- ── Left bank: major roads ── -->
-        <!-- Aachener Str (horizontal, upper) -->
-        <line x1="0"   y1="95"  x2="175" y2="95"  class="road-main"/>
-        <!-- Venloer Str (diagonal) -->
-        <path d="M 0 170 Q 60 155 120 145 L 175 140" class="road-main" stroke="#b0996e" stroke-width="2.5" fill="none" opacity="0.5"/>
-        <!-- Innere Kanalstr (ring road arc) -->
-        <path d="M 30 220 Q 80 180 140 170 Q 165 166 175 165" class="road-ring" fill="none"/>
-        <!-- Gürtel / ring roads (left) -->
-        <path d="M 0 310 Q 50 280 110 270 Q 150 265 175 262" class="road-ring" fill="none"/>
-        <!-- Ehrenfelder Str -->
-        <line x1="60"  y1="60"  x2="60"  y2="300" class="road"/>
-        <!-- Subbelrather Str -->
-        <line x1="25"  y1="0"   x2="25"  y2="280" class="road"/>
-        <!-- Neusser Str -->
-        <line x1="110" y1="0"   x2="110" y2="200" class="road"/>
-        <!-- Friesenwall -->
-        <line x1="145" y1="160" x2="175" y2="220" class="road"/>
-        <!-- Ringe (inner city) -->
-        <path d="M 100 200 Q 130 185 158 190 L 175 195" class="road-main" fill="none"/>
-        <!-- Schildergasse area -->
-        <line x1="120" y1="250" x2="175" y2="250" class="road"/>
-        <!-- Rheinufer left -->
-        <line x1="168" y1="0"   x2="168" y2="560" class="road" opacity="0.3"/>
-
-        <!-- ── Right bank: major roads ── -->
-        <line x1="230" y1="0"   x2="230" y2="560" class="road"/>
-        <line x1="270" y1="0"   x2="270" y2="560" class="road"/>
-        <line x1="315" y1="0"   x2="315" y2="560" class="road"/>
-        <line x1="205" y1="200" x2="360" y2="200" class="road-main"/>
-        <line x1="205" y1="290" x2="360" y2="290" class="road-main"/>
-        <line x1="205" y1="370" x2="360" y2="370" class="road"/>
-        <!-- Rheinufer right -->
-        <line x1="205" y1="0"   x2="205" y2="560" class="road" opacity="0.3"/>
-
-        <!-- ── BRIDGES ── -->
-        <!-- Hohenzollernbrücke (rail, ~210-215 y) -->
-        <rect x="175" y="208" width="30" height="7" fill="#b0996e" rx="2" opacity="0.85"/>
-        <line x1="178" y1="208" x2="178" y2="215" stroke="#8b7355" stroke-width="1"/>
-        <line x1="183" y1="208" x2="183" y2="215" stroke="#8b7355" stroke-width="1"/>
-        <line x1="188" y1="208" x2="188" y2="215" stroke="#8b7355" stroke-width="1"/>
-        <line x1="193" y1="208" x2="193" y2="215" stroke="#8b7355" stroke-width="1"/>
-        <line x1="198" y1="208" x2="198" y2="215" stroke="#8b7355" stroke-width="1"/>
-        <text x="190" y="204" fill="#7a6545" font-size="5.5" text-anchor="middle"
-              font-family="sans-serif">Hohenzollernbrücke</text>
-
-        <!-- Deutzer Brücke (~320 y) — this is the BRIDGE EVENT crossing -->
-        <rect x="175" y="318" width="30" height="8" fill="#b0996e" rx="2" opacity="0.9"/>
-        <line x1="179" y1="318" x2="179" y2="326" stroke="#8b7355" stroke-width="1.5"/>
-        <line x1="184" y1="318" x2="184" y2="326" stroke="#8b7355" stroke-width="1.5"/>
-        <line x1="190" y1="318" x2="190" y2="326" stroke="#8b7355" stroke-width="1.5"/>
-        <line x1="196" y1="318" x2="196" y2="326" stroke="#8b7355" stroke-width="1.5"/>
-        <line x1="201" y1="318" x2="201" y2="326" stroke="#8b7355" stroke-width="1.5"/>
-        <text x="190" y="315" fill="#7a6545" font-size="5.5" text-anchor="middle"
-              font-family="sans-serif">Deutzer Brücke</text>
-
-        <!-- Severinsbrücke (~420 y) -->
-        <rect x="175" y="415" width="28" height="6" fill="#b0996e" rx="2" opacity="0.7"/>
-        <text x="190" y="411" fill="#7a6545" font-size="5" text-anchor="middle"
-              font-family="sans-serif">Severinsbrücke</text>
-
-        <!-- ── LANDMARKS & LABELS ── -->
-        <!-- Dom (Cathedral) left bank near river ~210 -->
-        <text x="155" y="230" font-size="18" text-anchor="middle">⛪</text>
-        <text x="155" y="244" fill="#6b5740" font-size="6" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold">Dom</text>
+        <!-- Dom landmark -->
+        <text x="158" y="233" font-size="18" text-anchor="middle">⛪</text>
+        <text x="158" y="247" fill="#6b5740" font-size="5.5" text-anchor="middle" font-family="sans-serif" font-weight="bold">Dom</text>
 
         <!-- Neighbourhood labels -->
-        <text x="45"  y="75"  fill="#9a845c" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">Ehrenfeld</text>
-        <text x="100" y="165" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Innenstadt</text>
-        <text x="110" y="295" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Altstadt</text>
-        <text x="270" y="260" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Deutz</text>
-        <text x="270" y="170" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Mülheim</text>
-        <text x="270" y="380" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Kalk</text>
+        <text x="48"  y="70"  fill="#9a845c" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">Ehrenfeld</text>
+        <text x="103" y="170" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Innenstadt</text>
+        <text x="110" y="300" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Altstadt</text>
+        <text x="270" y="265" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Deutz</text>
+        <text x="270" y="175" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Mülheim</text>
+        <text x="270" y="385" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Kalk</text>
 
-        <!-- ── HOME marker (always visible) ── -->
-        <g id="home-marker">
-          <circle cx="45" cy="105" r="16" fill="#059669" stroke="#065f46" stroke-width="2.5"/>
-          <text x="45" y="111" font-size="14" text-anchor="middle">🏠</text>
+        <!-- HOME (always visible) -->
+        <g id="home-mk">
+          <circle cx="44" cy="100" r="16" fill="#059669" stroke="#065f46" stroke-width="2.5"/>
+          <text x="44" y="106" font-size="14" text-anchor="middle">🏠</text>
         </g>
-        <text x="45" y="126" fill="#065f46" font-size="6.5" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold">Start</text>
+        <text x="44" y="121" fill="#065f46" font-size="6" text-anchor="middle" font-family="sans-serif" font-weight="bold">Start</text>
 
-        <!-- ══════════════════════════════════════
-             TOUR PATH SEGMENTS (fog-of-war)
-             Route: Home (Ehrenfeld) →
-                    Haus Scholzen (Ehrenfeld) →
-                    Päffgen (Friesenviertel, left bank) →
-                    Sünner im Walfisch (Altstadt, LEFT bank) →
-                    [BRIDGE EVENT: Deutzer Brücke] →
-                    Lommerzheim (Deutz, RIGHT bank)
-        ══════════════════════════════════════ -->
-
-        <!-- Seg A: Home → mid-1 (Ehrenfeld streets) -->
-        <path id="seg-a" class="path-seg"
-          d="M 45 105 C 48 115 56 125 65 135 C 72 143 78 150 82 158"/>
-
-        <!-- Seg B: mid-1 → Station 1 (Haus Scholzen, still Ehrenfeld) -->
-        <path id="seg-b" class="path-seg"
-          d="M 82 158 C 87 168 90 178 92 190 C 94 200 93 210 93 220"/>
-
-        <!-- Seg C: Station 1 → mid-2 (heading into Innenstadt) -->
-        <path id="seg-c" class="path-seg"
-          d="M 93 220 C 97 235 106 248 115 258 C 121 264 126 268 130 272"/>
-
-        <!-- Seg D: mid-2 → Station 2 (Päffgen, Friesenviertel) -->
-        <path id="seg-d" class="path-seg"
-          d="M 130 272 C 135 282 138 292 138 302 C 138 308 137 313 136 318"/>
-
-        <!-- Seg E: Station 2 → mid-3 (through Altstadt towards river) -->
-        <path id="seg-e" class="path-seg"
-          d="M 136 318 C 138 328 143 336 148 342 C 153 348 158 352 162 356"/>
-
-        <!-- Seg F: mid-3 → Station 3 (Sünner im Walfisch, Altstadt LEFT bank) -->
-        <path id="seg-f" class="path-seg"
-          d="M 162 356 C 163 360 163 364 163 368 C 163 372 162 376 162 380"/>
-
-        <!-- Seg G: Station 3 → BRIDGE EVENT (Deutzer Brücke crossing) -->
-        <path id="seg-g" class="path-seg"
-          d="M 162 380 C 164 395 168 408 172 418 C 176 424 181 324 190 322 C 197 321 205 322 212 322"/>
-
-        <!-- Seg H: BRIDGE EVENT → Station 4 (Lommerzheim, Deutz RIGHT bank) -->
-        <path id="seg-h" class="path-seg"
-          d="M 212 322 C 224 320 236 310 248 304 C 256 299 262 296 268 294"/>
+        <!-- ══ PATH SEGMENTS ══
+          Route (W→E):
+          Home (Ehrenfeld) → [scramble] → Station 1 Haus Scholzen (Ehrenfeld)
+          → [Zeitreise scanner] → half-path → [road event 1] → Station 2 Päffgen (Friesenviertel)
+          → [horse game] → half-path → [road event 2] → Station 3 Sünner (Altstadt, LEFT bank near Dom)
+          → [compass game] → half-path → [BRIDGE road event] → Station 4 Lommerzheim (Deutz, RIGHT bank)
+        -->
+        <!-- seg-a: Home → Station 1 (Haus Scholzen ~x=80,y=145, close to home in Ehrenfeld) -->
+        <path id="seg-a" class="path-seg" d="M 44 100 C 48 112 58 125 66 133 C 72 139 77 143 80 147"/>
+        <!-- seg-b: Station 1 → mid-1 -->
+        <path id="seg-b" class="path-seg" d="M 80 147 C 88 160 100 175 112 185 C 120 192 127 197 132 202"/>
+        <!-- seg-c: mid-1 → Station 2 (Päffgen ~x=133,y=270, Friesenviertel) -->
+        <path id="seg-c" class="path-seg" d="M 132 202 C 134 218 135 238 135 252 C 135 260 134 266 133 270"/>
+        <!-- seg-d: Station 2 → mid-2 -->
+        <path id="seg-d" class="path-seg" d="M 133 270 C 137 283 143 295 148 305 C 152 312 155 317 157 322"/>
+        <!-- seg-e: mid-2 → Station 3 (Sünner im Walfisch ~x=162,y=252, near Dom, LEFT bank) -->
+        <path id="seg-e" class="path-seg" d="M 157 322 C 159 315 160 305 161 295 C 162 283 162 270 162 258 C 162 254 162 253 162 252"/>
+        <!-- seg-f: Station 3 → mid-3 (Hohenzollernbrücke crossing ~x=192,y=218) -->
+        <path id="seg-f" class="path-seg" d="M 162 252 C 163 244 164 236 167 228 C 170 222 176 217 185 215 C 190 214 194 215 198 216"/>
+        <!-- seg-g: mid-3 (bridge event) → Station 4 (Lommerzheim ~x=265,y=257, RIGHT bank Deutz) -->
+        <path id="seg-g" class="path-seg" d="M 198 216 C 210 215 222 230 235 240 C 246 248 256 253 265 257"/>
 
         <!-- ══ MID-EVENT MARKERS ══ -->
-
-        <!-- Mid 1: street event (Ehrenfeld side streets) -->
-        <g id="mid-1" class="mid-event" data-mid="1">
-          <circle cx="82" cy="158" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
-          <text x="82" y="163" font-size="12" text-anchor="middle">⚡</text>
+        <!-- mid-1: road event between S1 and S2 -->
+        <g id="mid-1" class="mid-evt" data-mid="1">
+          <circle cx="132" cy="202" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
+          <text x="132" y="207" font-size="12" text-anchor="middle">⚡</text>
+        </g>
+        <!-- mid-2: road event between S2 and S3 -->
+        <g id="mid-2" class="mid-evt" data-mid="2">
+          <circle cx="157" cy="322" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
+          <text x="157" y="327" font-size="12" text-anchor="middle">⚡</text>
+        </g>
+        <!-- mid-3: BRIDGE EVENT on Hohenzollernbrücke -->
+        <g id="mid-3" class="mid-evt" data-mid="3">
+          <circle cx="192" cy="216" r="15" fill="#B45309" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="192" y="222" font-size="13" text-anchor="middle">🌉</text>
         </g>
 
-        <!-- Mid 2: street event (Innenstadt / Friesenviertel) -->
-        <g id="mid-2" class="mid-event" data-mid="2">
-          <circle cx="130" cy="272" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
-          <text x="130" y="277" font-size="12" text-anchor="middle">⚡</text>
+        <!-- ══ STATIONS ══ -->
+        <!-- Station 1: Haus Scholzen (Ehrenfeld, x=80,y=147 — close to home) -->
+        <g id="station-1" class="stn-mk" data-station="1">
+          <circle cx="80" cy="147" r="23" fill="#D97706" opacity=".22"/>
+          <circle cx="80" cy="147" r="16" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="80" y="153" font-size="14" text-anchor="middle">🏠</text>
         </g>
+        <text id="label-1" x="80" y="169" fill="#7C2D12" font-size="6" text-anchor="middle" font-family="sans-serif" font-weight="bold" opacity="0">Haus Scholzen</text>
 
-        <!-- Mid 3: street event (Altstadt) -->
-        <g id="mid-3" class="mid-event" data-mid="3">
-          <circle cx="162" cy="356" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
-          <text x="162" y="361" font-size="12" text-anchor="middle">⚡</text>
+        <!-- Station 2: Päffgen (Friesenviertel, x=133,y=270) -->
+        <g id="station-2" class="stn-mk" data-station="2">
+          <circle cx="133" cy="270" r="23" fill="#D97706" opacity=".22"/>
+          <circle cx="133" cy="270" r="16" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="133" y="276" font-size="14" text-anchor="middle">🍻</text>
         </g>
+        <text id="label-2" x="133" y="292" fill="#7C2D12" font-size="6" text-anchor="middle" font-family="sans-serif" font-weight="bold" opacity="0">Päffgen</text>
 
-        <!-- Mid 4: BRIDGE EVENT on Deutzer Brücke ★ -->
-        <g id="mid-4" class="mid-event" data-mid="4">
-          <circle cx="192" cy="322" r="15" fill="#B45309" stroke="#7C2D12" stroke-width="2.5"/>
-          <text x="192" y="328" font-size="13" text-anchor="middle">🌉</text>
+        <!-- Station 3: Sünner im Walfisch (Altstadt LEFT bank, x=162,y=252, near Dom) -->
+        <g id="station-3" class="stn-mk" data-station="3">
+          <circle cx="162" cy="252" r="23" fill="#D97706" opacity=".22"/>
+          <circle cx="162" cy="252" r="16" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="162" y="258" font-size="14" text-anchor="middle">🐳</text>
         </g>
+        <text id="label-3" x="162" y="274" fill="#7C2D12" font-size="6" text-anchor="middle" font-family="sans-serif" font-weight="bold" opacity="0">Sünner i. Walfisch</text>
 
-        <!-- ══ BREWERY STATIONS ══ -->
-
-        <!-- Station 1: Haus Scholzen (Ehrenfeld, left bank) -->
-        <g id="station-1" class="station-marker" data-station="1">
-          <circle class="outer" cx="93" cy="220" r="24" fill="#D97706" opacity="0.22"/>
-          <circle cx="93" cy="220" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
-          <text x="93" y="226" font-size="15" text-anchor="middle">🏠</text>
+        <!-- Station 4: Lommerzheim (Deutz RIGHT bank, x=265,y=257) -->
+        <g id="station-4" class="stn-mk" data-station="4">
+          <circle cx="265" cy="257" r="26" fill="#92400E" opacity=".22"/>
+          <circle cx="265" cy="257" r="18" fill="#92400E" stroke="#451A03" stroke-width="2.5"/>
+          <text x="265" y="264" font-size="15" text-anchor="middle">🏆</text>
         </g>
-        <text id="label-1" x="93" y="243" fill="#7C2D12" font-size="6" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold" opacity="0">Haus Scholzen</text>
+        <text id="label-4" x="265" y="282" fill="#7C2D12" font-size="6" text-anchor="middle" font-family="sans-serif" font-weight="bold" opacity="0">Lommerzheim</text>
 
-        <!-- Station 2: Päffgen (Friesenviertel, left bank) -->
-        <g id="station-2" class="station-marker" data-station="2">
-          <circle class="outer" cx="136" cy="318" r="24" fill="#D97706" opacity="0.22"/>
-          <circle cx="136" cy="318" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
-          <text x="136" y="324" font-size="15" text-anchor="middle">🍻</text>
-        </g>
-        <text id="label-2" x="136" y="341" fill="#7C2D12" font-size="6" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold" opacity="0">Päffgen</text>
-
-        <!-- Station 3: Sünner im Walfisch (Altstadt, LEFT bank) -->
-        <g id="station-3" class="station-marker" data-station="3">
-          <circle class="outer" cx="162" cy="380" r="24" fill="#D97706" opacity="0.22"/>
-          <circle cx="162" cy="380" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
-          <text x="162" y="386" font-size="15" text-anchor="middle">🐳</text>
-        </g>
-        <text id="label-3" x="162" y="403" fill="#7C2D12" font-size="6" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold" opacity="0">Sünner i. Walfisch</text>
-
-        <!-- Station 4: Lommerzheim (Deutz, RIGHT bank — FINISH) -->
-        <g id="station-4" class="station-marker" data-station="4">
-          <circle class="outer" cx="268" cy="294" r="28" fill="#92400E" opacity="0.22"/>
-          <circle cx="268" cy="294" r="19" fill="#92400E" stroke="#451A03" stroke-width="2.5"/>
-          <text x="268" y="301" font-size="16" text-anchor="middle">🏆</text>
-        </g>
-        <text id="label-4" x="268" y="320" fill="#7C2D12" font-size="6" text-anchor="middle"
-              font-family="sans-serif" font-weight="bold" opacity="0">Lommerzheim</text>
-
-        <!-- ── FOG OF WAR ── -->
+        <!-- FOG -->
         <defs>
-          <radialGradient id="fogGrad" cx="15%" cy="18%" r="92%">
-            <stop offset="0%"   stop-color="#ddf0f8" stop-opacity="0"/>
-            <stop offset="45%"  stop-color="#aed6e8" stop-opacity="0.25"/>
-            <stop offset="100%" stop-color="#6db2ce" stop-opacity="0.88"/>
+          <radialGradient id="fogGrad" cx="13%" cy="17%" r="90%">
+            <stop offset="0%" stop-color="#ddf0f8" stop-opacity="0"/>
+            <stop offset="42%" stop-color="#aed6e8" stop-opacity=".22"/>
+            <stop offset="100%" stop-color="#5fa8c4" stop-opacity=".88"/>
           </radialGradient>
         </defs>
-        <rect id="fog" x="0" y="0" width="360" height="560"
-              fill="url(#fogGrad)" pointer-events="none" opacity="0.6"
-              style="transition: opacity 1.2s ease;"/>
-
+        <rect id="fog" x="0" y="0" width="360" height="560" fill="url(#fogGrad)" pointer-events="none" opacity=".65" style="transition:opacity 1.2s"/>
       </svg>
     </div>
 
     <!-- INFO PANEL -->
-    <div class="info-panel w-full max-w-md mx-auto flex-shrink-0">
-      <p id="panel-eyebrow" class="font-sans text-amber-600 text-[10px] mb-1">Aktueller Status:</p>
-      <h2 id="panel-title"  class="text-amber-900 text-sm mb-1 leading-snug pixel-font">Bereit!</h2>
-      <p id="panel-sub"     class="font-sans text-amber-700 text-xs italic mb-2">Ehrenfeld – Startpunkt</p>
-      <p id="panel-desc"    class="font-sans text-amber-800 text-xs leading-relaxed mb-4">
-        Eure Tour beginnt hier. Schließe das Mini-Spiel ab, um loszuziehen!
-      </p>
-      <div id="action-panel" class="flex flex-col gap-2"></div>
+    <div class="info-panel" style="width:100%;max-width:400px">
+      <p id="panel-eye" style="font-family:sans-serif;color:#D97706;font-size:11px;margin-bottom:4px">Aktueller Status:</p>
+      <h2 id="panel-title" class="pf" style="color:#78350F;font-size:clamp(9px,2.5vw,12px);margin:0 0 4px;line-height:1.6">Bereit!</h2>
+      <p id="panel-sub" style="font-family:sans-serif;color:#92400E;font-size:12px;font-style:italic;margin:0 0 8px"></p>
+      <p id="panel-desc" style="font-family:sans-serif;color:#78350F;font-size:12px;line-height:1.6;margin:0 0 14px"></p>
+      <div id="action-panel"></div>
     </div>
-
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ══ MINIGAME OVERLAY ══ -->
+<div id="mg-overlay">
+  <div class="mg-box" id="mg-box"></div>
+</div>
+
 <script>
 'use strict';
-
-// ──────────────────────────────────────────────
-//  CONSTANTS
-// ──────────────────────────────────────────────
-const STORAGE_KEY = 'brauhaus_progress_v1';
+// ═══════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════
+const STORAGE_KEY = 'brauhaus_v2';
 
 const DIALOGUE = [
   "Hallo Nadine! Alles Gute zum Geburtstag! 🎉",
@@ -766,342 +564,623 @@ const DIALOGUE = [
   "Klick auf 'Zur Karte!' um das Abenteuer zu starten!"
 ];
 
-// Reveal what each step shows on the map
-const REVEAL_MAP = {
-  0: { segs:[], mids:[], stations:[], labels:[] },
-  1: { segs:['seg-a'],   mids:['mid-1'],  stations:[],           labels:[] },
-  2: { segs:['seg-b'],   mids:[],         stations:['station-1'],labels:['label-1'] },
-  3: { segs:['seg-c'],   mids:['mid-2'],  stations:[],           labels:[] },
-  4: { segs:['seg-d'],   mids:[],         stations:['station-2'],labels:['label-2'] },
-  5: { segs:['seg-e'],   mids:['mid-3'],  stations:[],           labels:[] },
-  6: { segs:['seg-f'],   mids:[],         stations:['station-3'],labels:['label-3'] },
-  7: { segs:['seg-g'],   mids:['mid-4'],  stations:[],           labels:[] },
-  8: { segs:['seg-h'],   mids:[],         stations:['station-4'],labels:['label-4'] },
+/*  STEPS:
+  0  = map loaded, no progress (scramble already done → S1 visible)
+  1  = S1 scanner done → seg-b + mid-1 visible
+  2  = road event 1 done → seg-c + S2 visible
+  3  = S2 horse game done → seg-d + mid-2 visible
+  4  = road event 2 done → seg-e + S3 visible
+  5  = S3 compass done → seg-f + mid-3 visible
+  6  = bridge event done → seg-g + S4 visible  (FINALE)
+*/
+const REVEAL = {
+  0: { segs:['seg-a'], mids:[], stns:['station-1'], lbls:['label-1'] },
+  1: { segs:['seg-b'], mids:['mid-1'], stns:[], lbls:[] },
+  2: { segs:['seg-c'], mids:[], stns:['station-2'], lbls:['label-2'] },
+  3: { segs:['seg-d'], mids:['mid-2'], stns:[], lbls:[] },
+  4: { segs:['seg-e'], mids:[], stns:['station-3'], lbls:['label-3'] },
+  5: { segs:['seg-f'], mids:['mid-3'], stns:[], lbls:[] },
+  6: { segs:['seg-g'], mids:[], stns:['station-4'], lbls:['label-4'] },
 };
 
 const STEP_INFO = {
-  0: {
-    eyebrow:'Startpunkt:', title:'Zuhause in Ehrenfeld',
-    sub:'📍 Ehrenfeld',
-    desc:'Eure Tour beginnt hier zuhause. Schließe das erste Mini-Spiel ab, um aufzubrechen!',
-    btn:{ label:'🎮 Start-Spiel absolvieren', next:1 }
-  },
-  1: {
-    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
-    sub:'⚡ Unterwegs nach Haus Scholzen',
-    desc:'Auf halbem Weg wartet ein Straßen-Ereignis in Ehrenfeld. Bestehe die Herausforderung!',
-    btn:{ label:'⚡ Straßen-Event lösen', next:2 }
-  },
-  2: {
-    eyebrow:'Station 1:', title:'Haus Scholzen',
-    sub:'🏠 Ehrenfeld',
-    desc:'Angekommen! Haus Scholzen – das urige Starter-Brauhaus. Zeit für ein Kölsch. Bestehe das Brauhaus-Spiel!',
-    btn:{ label:'🎮 Haus Scholzen Spiel', next:3 }
-  },
-  3: {
-    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
-    sub:'⚡ Unterwegs nach Päffgen',
-    desc:'Weiter in die Innenstadt – Richtung Friesenviertel! Ein Straßen-Abenteuer wartet.',
-    btn:{ label:'⚡ Straßen-Event lösen', next:4 }
-  },
-  4: {
-    eyebrow:'Station 2:', title:'Päffgen Brauhaus',
-    sub:'🍻 Friesenviertel',
-    desc:'Traditionell und urig – das Päffgen ist Kölsch pur. Zeig was du kannst!',
-    btn:{ label:'🎮 Päffgen Spiel', next:5 }
-  },
-  5: {
-    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
-    sub:'⚡ Durch die Altstadt',
-    desc:'Weiter durch die Altstadt Richtung Walfisch. Noch ein Event auf dem Weg!',
-    btn:{ label:'⚡ Straßen-Event lösen', next:6 }
-  },
-  6: {
-    eyebrow:'Station 3:', title:'Sünner im Walfisch',
-    sub:'🐳 Altstadt (linksrheinisch)',
-    desc:'Ein historisches Brauhaus direkt in der Kölner Altstadt – linke Rheinseite. Sünner-Kölsch – legendär!',
-    btn:{ label:'🎮 Walfisch Spiel', next:7 }
-  },
-  7: {
-    eyebrow:'Brücken-Event! 🌉', title:'Ab über die Deutzer Brücke!',
-    sub:'🌉 Rheinüberquerung',
-    desc:'Jetzt geht es rüber auf die rechtsrheinische Seite! Meistere das Brücken-Event, um nach Deutz zu kommen.',
-    btn:{ label:'🌉 Brücken-Event lösen', next:8 }
-  },
-  8: {
-    eyebrow:'🏆 ZIEL ERREICHT!', title:'Lommerzheim',
-    sub:'🏆 Deutz (rechtsrheinisch) – Finale Station',
-    desc:'IHR HABT ES GESCHAFFT! Lommerzheim – die kölsche Institution auf der rechten Rheinseite. Prost auf Nadines Geburtstag! 🎉🍺',
-    btn:null
-  },
+  0: { eye:'Station 1:', title:'Haus Scholzen', sub:'🏠 Ehrenfeld',
+    desc:'Angekommen! Das Abenteuer beginnt. Starte den Zeitreise-Scanner!',
+    action: () => openMG('zeitreise') },
+  1: { eye:'Auf dem Weg...', title:'Straßen-Event!', sub:'⚡ Richtung Päffgen',
+    desc:'Ein Ereignis auf dem Weg. Klick um weiterzugehen!',
+    action: () => { advanceStep(2); closeMG(); } },
+  2: { eye:'Station 2:', title:'Päffgen Brauhaus', sub:'🍻 Friesenviertel',
+    desc:'Traditionell und urig! Das Pferdefuhrwerk-Spiel wartet.',
+    action: () => openMG('horse') },
+  3: { eye:'Auf dem Weg...', title:'Straßen-Event!', sub:'⚡ Richtung Altstadt',
+    desc:'Noch ein Ereignis auf dem Weg. Klick um weiterzugehen!',
+    action: () => { advanceStep(4); closeMG(); } },
+  4: { eye:'Station 3:', title:'Sünner im Walfisch', sub:'🐳 Altstadt (linksrheinisch)',
+    desc:'Historisches Brauhaus direkt neben dem Dom. Der Kölsch-Kompass wartet!',
+    action: () => openMG('compass') },
+  5: { eye:'Brücken-Event! 🌉', title:'Hohenzollernbrücke!', sub:'🌉 Rheinüberquerung',
+    desc:'Rüber auf die rechte Seite! Klick um die Brücke zu überqueren.',
+    action: () => { advanceStep(6); closeMG(); } },
+  6: { eye:'🏆 ZIEL ERREICHT!', title:'Lommerzheim', sub:'🏆 Deutz (rechtsrheinisch)',
+    desc:'IHR HABT ES GESCHAFFT! Prost auf Nadines Geburtstag! 🎉🍺',
+    action: null },
 };
 
-// ──────────────────────────────────────────────
-//  SCENE SYSTEM
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════
+function qs(id) { return document.getElementById(id); }
 function showScene(id) {
   document.querySelectorAll('.scene').forEach(s => s.classList.add('scene-hidden'));
-  document.getElementById(id).classList.remove('scene-hidden');
+  qs(id).classList.remove('scene-hidden');
 }
+function saveProgress(s) { try { localStorage.setItem(STORAGE_KEY, String(s)); } catch(e){} }
+function loadProgress() { try { return parseInt(localStorage.getItem(STORAGE_KEY)||'0',10)||0; } catch(e){ return 0; } }
 
-// ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════
 //  MENU
-// ──────────────────────────────────────────────
-const menuBtn     = document.getElementById('menu-btn');
-const menuOverlay = document.getElementById('menu-overlay');
+// ═══════════════════════════════════════════════
+const menuBtn = qs('menu-btn'), menuOv = qs('menu-overlay');
+function showMenu(v) { v ? menuBtn.classList.add('vis') : menuBtn.classList.remove('vis'); }
+menuBtn.addEventListener('click', e => { e.stopPropagation(); menuOv.classList.toggle('open'); });
+menuOv.addEventListener('click', e => { if(e.target===menuOv) menuOv.classList.remove('open'); });
 
-function showMenu(show) {
-  if (show) menuBtn.classList.add('visible');
-  else      menuBtn.classList.remove('visible');
+function menuJump(step) {
+  menuOv.classList.remove('open');
+  showScene('scene-map'); initMap(step);
 }
-
-menuBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  menuOverlay.classList.toggle('open');
-});
-menuOverlay.addEventListener('click', e => {
-  if (e.target === menuOverlay) menuOverlay.classList.remove('open');
-});
-
-function jumpToStation(step) {
-  menuOverlay.classList.remove('open');
-  showScene('scene-map');
-  initMap(step);
-}
-
-function resetProgress() {
-  menuOverlay.classList.remove('open');
+function menuReset() {
+  menuOv.classList.remove('open');
   localStorage.removeItem(STORAGE_KEY);
-  jumpToStation(0);
+  showScene('scene-map'); initMap(0);
 }
+window.menuJump = menuJump; window.menuReset = menuReset;
 
-// ──────────────────────────────────────────────
-//  SCENE 1 · WELCOME
-// ──────────────────────────────────────────────
-const nameInput = document.getElementById('name-input');
-const errorMsg  = document.getElementById('error-msg');
-
+// ═══════════════════════════════════════════════
+//  SCENE 1: WELCOME
+// ═══════════════════════════════════════════════
+const nameInput = qs('name-input'), errorMsg = qs('error-msg');
 function checkName() {
-  const v = nameInput.value.trim().toLowerCase();
-  if (v === 'nadine') {
-    errorMsg.classList.add('hidden');
+  if (nameInput.value.trim().toLowerCase() === 'nadine') {
+    errorMsg.style.display = 'none';
     showMenu(true);
-
-    // Check for saved progress → skip to map
     const saved = loadProgress();
-    if (saved > 0) {
-      showScene('scene-map');
-      initMap(saved);
-    } else {
-      showScene('scene-intro');
-      startDialogue();
-    }
+    if (saved > 0) { showScene('scene-map'); initMap(saved); }
+    else { showScene('scene-intro'); startDialogue(); }
   } else {
-    errorMsg.classList.remove('hidden');
-    nameInput.classList.add('error-shake');
-    setTimeout(() => nameInput.classList.remove('error-shake'), 400);
+    errorMsg.style.display = 'block';
+    nameInput.classList.add('shake');
+    setTimeout(() => nameInput.classList.remove('shake'), 400);
   }
 }
-document.getElementById('confirm-btn').addEventListener('click', checkName);
-nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkName(); });
+qs('confirm-btn').addEventListener('click', checkName);
+nameInput.addEventListener('keydown', e => { if(e.key==='Enter') checkName(); });
 
-// ──────────────────────────────────────────────
-//  SCENE 2 · INTRO DIALOGUE
-// ──────────────────────────────────────────────
-const dialogueTextEl   = document.getElementById('dialogue-text');
-const continuePromptEl = document.getElementById('continue-prompt');
-const toLoadingBtn     = document.getElementById('to-loading-btn');
-const nadineCard       = document.getElementById('nadine-card');
-const dialogueBox      = document.getElementById('dialogue-box');
-
-let dlLine = 0, isTyping = false, typeTimer = null;
-let audioCtx = null;
-
+// ═══════════════════════════════════════════════
+//  SCENE 2: DIALOGUE
+// ═══════════════════════════════════════════════
+let dlLine=0, isTyping=false, typeTimer=null, audioCtx=null;
 function chirp() {
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.type = 'square';
-    osc.frequency.value = 680 + Math.random() * 300;
-    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.065);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.065);
-  } catch(e) {}
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type='square'; o.frequency.value=680+Math.random()*300;
+    g.gain.setValueAtTime(.05,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.065);
+    o.start(); o.stop(audioCtx.currentTime+.065);
+  } catch(e){}
 }
-
-function typeLine(text) {
-  isTyping = true;
-  dialogueTextEl.textContent = '';
-  continuePromptEl.classList.add('hidden');
-  toLoadingBtn.classList.add('hidden');
-  let i = 0;
-  typeTimer = setInterval(() => {
-    dialogueTextEl.textContent += text[i];
-    if (text[i] && text[i].trim()) chirp();
+function typeLine(txt) {
+  isTyping=true;
+  qs('dlg-text').textContent='';
+  qs('dlg-prompt').style.display='none';
+  qs('to-loading-btn').style.display='none';
+  let i=0;
+  typeTimer=setInterval(()=>{
+    qs('dlg-text').textContent+=txt[i];
+    if(txt[i]&&txt[i].trim()) chirp();
     i++;
-    if (i >= text.length) {
-      clearInterval(typeTimer); isTyping = false;
-      if (dlLine < DIALOGUE.length - 1) {
-        continuePromptEl.classList.remove('hidden');
-      } else {
-        toLoadingBtn.classList.remove('hidden');
-      }
+    if(i>=txt.length){
+      clearInterval(typeTimer); isTyping=false;
+      if(dlLine<DIALOGUE.length-1) qs('dlg-prompt').style.display='inline-block';
+      else qs('to-loading-btn').style.display='inline-block';
     }
-  }, 42);
+  },42);
 }
-
-function advanceDialogue() {
-  if (isTyping) {
-    clearInterval(typeTimer);
-    dialogueTextEl.textContent = DIALOGUE[dlLine];
-    isTyping = false;
-    if (dlLine < DIALOGUE.length - 1) continuePromptEl.classList.remove('hidden');
-    else toLoadingBtn.classList.remove('hidden');
+function advDialogue() {
+  if(isTyping){
+    clearInterval(typeTimer); qs('dlg-text').textContent=DIALOGUE[dlLine]; isTyping=false;
+    if(dlLine<DIALOGUE.length-1) qs('dlg-prompt').style.display='inline-block';
+    else qs('to-loading-btn').style.display='inline-block';
     return;
   }
   dlLine++;
-  if (dlLine >= DIALOGUE.length) return;
-  typeLine(DIALOGUE[dlLine]);
+  if(dlLine<DIALOGUE.length) typeLine(DIALOGUE[dlLine]);
 }
-
 function startDialogue() {
-  setTimeout(() => nadineCard.classList.add('nadine-slide-in'), 350);
-  dlLine = 0;
-  typeLine(DIALOGUE[0]);
+  setTimeout(()=>qs('nadine-card').classList.add('nadine-in'),350);
+  dlLine=0; typeLine(DIALOGUE[0]);
 }
-
-dialogueBox.addEventListener('click', e => {
-  if (e.target === toLoadingBtn) return;
-  if (!toLoadingBtn.classList.contains('hidden')) return;
-  advanceDialogue();
+qs('dlg-box').addEventListener('click', e=>{
+  if(e.target===qs('to-loading-btn')) return;
+  if(qs('to-loading-btn').style.display!=='none') return;
+  advDialogue();
 });
+qs('to-loading-btn').addEventListener('click',()=>{ showScene('scene-loading'); startLoading(); });
 
-toLoadingBtn.addEventListener('click', () => {
-  showScene('scene-loading');
-  startLoading();
-});
-
-// ──────────────────────────────────────────────
-//  SCENE 2.5 · CAULDRON LOADING
-// ──────────────────────────────────────────────
-const INGREDIENTS    = document.querySelectorAll('.ingredient');
-const loadingBarFill = document.getElementById('loading-bar-fill');
-const loadingPct     = document.getElementById('loading-pct');
-const TOTAL_MS       = 7000;
-const DROP_AT        = [0.12, 0.28, 0.46, 0.64, 0.82];
-
+// ═══════════════════════════════════════════════
+//  SCENE 2.5: CAULDRON
+// ═══════════════════════════════════════════════
+const INGRS = document.querySelectorAll('.ingr');
+const DROP_AT = [.12,.28,.46,.64,.82];
 function startLoading() {
-  INGREDIENTS.forEach(el => { el.className = 'ingredient'; });
-  loadingBarFill.style.width = '0%';
-  loadingPct.textContent = '0%';
-  const t0 = performance.now();
-  let dropped = 0;
-
-  function tick(now) {
-    const pct = Math.min((now - t0) / TOTAL_MS, 1);
-    loadingBarFill.style.width = (pct * 100).toFixed(1) + '%';
-    loadingPct.textContent = Math.floor(pct * 100) + '%';
-
-    while (dropped < DROP_AT.length && pct >= DROP_AT[dropped]) {
-      INGREDIENTS[dropped].classList.add('dropping');
-      if (dropped > 0) INGREDIENTS[dropped - 1].classList.add('dropped');
+  INGRS.forEach(el=>{ el.className='ingr'; });
+  qs('bar-fill').style.width='0%'; qs('bar-pct').textContent='0%';
+  const t0=performance.now(); let dropped=0;
+  function tick(now){
+    const p=Math.min((now-t0)/7000,1);
+    qs('bar-fill').style.width=(p*100).toFixed(1)+'%';
+    qs('bar-pct').textContent=Math.floor(p*100)+'%';
+    while(dropped<DROP_AT.length&&p>=DROP_AT[dropped]){
+      INGRS[dropped].classList.add('dropping');
+      if(dropped>0) INGRS[dropped-1].classList.add('dropped');
       dropped++;
     }
-
-    if (pct < 1) { requestAnimationFrame(tick); }
+    if(p<1){ requestAnimationFrame(tick); }
     else {
-      INGREDIENTS[INGREDIENTS.length - 1]?.classList.add('dropped');
-      setTimeout(() => { showScene('scene-map'); initMap(0); }, 400);
+      INGRS[INGRS.length-1]?.classList.add('dropped');
+      setTimeout(()=>{ showScene('scene-scramble'); initScramble(); }, 400);
     }
   }
   requestAnimationFrame(tick);
 }
 
-// ──────────────────────────────────────────────
-//  PERSISTENCE
-// ──────────────────────────────────────────────
-function saveProgress(step) {
-  try { localStorage.setItem(STORAGE_KEY, String(step)); } catch(e) {}
-}
-function loadProgress() {
-  try { return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+// ═══════════════════════════════════════════════
+//  SCENE 2.8: SCRAMBLE
+// ═══════════════════════════════════════════════
+const ANSWER = 'EHRENFELD';
+const SCRAMBLED = ['D','E','L','N','E','R','H','F','E'];
+let scrambleAnswer = [];       // letters placed in answer slots
+let poolUsed = [];             // indices in pool that are used
+let selectedPoolIdx = null;    // currently selected pool tile
+
+function initScramble() {
+  scrambleAnswer = new Array(ANSWER.length).fill(null);
+  poolUsed = new Array(SCRAMBLED.length).fill(false);
+  selectedPoolIdx = null;
+  qs('scramble-err').style.display = 'none';
+  renderScramble();
 }
 
-// ──────────────────────────────────────────────
-//  SCENE 3 · MAP
-// ──────────────────────────────────────────────
+function renderScramble() {
+  const pool = qs('pool'), slots = qs('slots');
+  pool.innerHTML=''; slots.innerHTML='';
+
+  SCRAMBLED.forEach((letter, i) => {
+    const t = document.createElement('div');
+    t.className = 'letter-tile' + (poolUsed[i] ? ' empty' : '') + (selectedPoolIdx===i ? ' selected' : '');
+    t.textContent = poolUsed[i] ? '' : letter;
+    t.addEventListener('click', () => onPoolClick(i));
+    pool.appendChild(t);
+  });
+
+  for (let i=0; i<ANSWER.length; i++) {
+    const s = document.createElement('div');
+    s.className = 'answer-slot' + (scrambleAnswer[i] ? ' filled' : '');
+    s.textContent = scrambleAnswer[i] ? scrambleAnswer[i].letter : (i+1);
+    s.dataset.idx = i;
+    s.addEventListener('click', () => onSlotClick(i));
+    slots.appendChild(s);
+  }
+}
+
+function onPoolClick(i) {
+  if (poolUsed[i]) return;
+  // If something already selected, deselect
+  if (selectedPoolIdx === i) { selectedPoolIdx = null; renderScramble(); return; }
+  selectedPoolIdx = i;
+  renderScramble();
+  // Auto-fill first empty slot
+  const firstEmpty = scrambleAnswer.findIndex(s => s === null);
+  if (firstEmpty !== -1) {
+    scrambleAnswer[firstEmpty] = { letter: SCRAMBLED[i], poolIdx: i };
+    poolUsed[i] = true;
+    selectedPoolIdx = null;
+    renderScramble();
+  }
+}
+
+function onSlotClick(slotIdx) {
+  if (!scrambleAnswer[slotIdx]) return;
+  // Return letter to pool
+  const entry = scrambleAnswer[slotIdx];
+  poolUsed[entry.poolIdx] = false;
+  scrambleAnswer[slotIdx] = null;
+  selectedPoolIdx = null;
+  renderScramble();
+}
+
+qs('check-btn').addEventListener('click', () => {
+  const word = scrambleAnswer.map(s => s ? s.letter : '').join('');
+  if (word === ANSWER) {
+    qs('scramble-err').style.display = 'none';
+    // Show bierdeckel
+    qs('bierdeckel-overlay').classList.add('show');
+  } else {
+    qs('scramble-err').style.display = 'block';
+    const slotsEl = qs('slots');
+    slotsEl.querySelectorAll('.answer-slot').forEach(el => {
+      el.classList.add('wrong-shake');
+      setTimeout(() => el.classList.remove('wrong-shake'), 500);
+    });
+  }
+});
+
+qs('bierdeckel-card').addEventListener('click', () => {
+  qs('bierdeckel-overlay').classList.remove('show');
+  showScene('scene-map');
+  initMap(0); // step 0 = S1 already revealed
+});
+
+// ═══════════════════════════════════════════════
+//  SCENE 3: MAP
+// ═══════════════════════════════════════════════
 let progressStep = 0;
 
 function applyReveal(step) {
-  const r = REVEAL_MAP[step] || {};
-  (r.segs     || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
-  (r.mids     || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
-  (r.stations || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
-  (r.labels   || []).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.setAttribute('opacity', '1');
-  });
+  const r = REVEAL[step]; if(!r) return;
+  (r.segs||[]).forEach(id=>qs(id)?.classList.add('vis'));
+  (r.mids||[]).forEach(id=>qs(id)?.classList.add('vis'));
+  (r.stns||[]).forEach(id=>qs(id)?.classList.add('vis'));
+  (r.lbls||[]).forEach(id=>{ const el=qs(id); if(el) el.setAttribute('opacity','1'); });
 }
 
-function updateInfoPanel(step) {
-  const info = STEP_INFO[step];
-  if (!info) return;
-  document.getElementById('panel-eyebrow').textContent = info.eyebrow;
-  document.getElementById('panel-title').textContent   = info.title;
-  document.getElementById('panel-sub').textContent     = info.sub;
-  document.getElementById('panel-desc').textContent    = info.desc;
-
-  const ap = document.getElementById('action-panel');
-  ap.innerHTML = '';
-
-  if (info.btn) {
+function updatePanel(step) {
+  const info = STEP_INFO[step]; if(!info) return;
+  qs('panel-eye').textContent   = info.eye;
+  qs('panel-title').textContent = info.title;
+  qs('panel-sub').textContent   = info.sub;
+  qs('panel-desc').textContent  = info.desc;
+  const ap = qs('action-panel'); ap.innerHTML='';
+  if (info.action) {
+    const lbl = step===1||step===3||step===5 ? '⚡ Weiter!' : '🎮 Spiel starten!';
     const btn = document.createElement('button');
-    btn.className = 'action-btn';
-    btn.textContent = info.btn.label;
-    btn.addEventListener('click', () => advanceStep(info.btn.next));
+    btn.className='action-btn'; btn.textContent=lbl;
+    btn.addEventListener('click', info.action);
     ap.appendChild(btn);
   } else {
-    const p = document.createElement('p');
-    p.className = 'pixel-font text-amber-700 text-[10px] text-center mt-2 leading-loose';
-    p.textContent = '🍺 Prost Nadine! 🍺';
+    const p=document.createElement('p');
+    p.className='pf'; p.style.cssText='color:#D97706;font-size:10px;text-align:center;line-height:2';
+    p.textContent='🍺 Prost Nadine! 🍺';
     ap.appendChild(p);
   }
 }
 
-function advanceStep(targetStep) {
-  for (let s = progressStep + 1; s <= targetStep; s++) applyReveal(s);
-  progressStep = targetStep;
+function advanceStep(target) {
+  for(let s=progressStep;s<=target;s++) applyReveal(s);
+  progressStep=target;
   saveProgress(progressStep);
-  updateInfoPanel(progressStep);
-
-  const fog = document.getElementById('fog');
-  if (fog) fog.style.opacity = Math.max(0, 0.6 - progressStep * 0.065);
+  updatePanel(progressStep);
+  const fog=qs('fog');
+  if(fog) fog.style.opacity=Math.max(0,.65-progressStep*.09);
 }
 
-function initMap(fromStep = 0) {
-  // Reset visual state
-  document.querySelectorAll('.path-seg, .mid-event, .station-marker')
-    .forEach(el => el.classList.remove('visible'));
-  document.querySelectorAll('[id^="label-"]')
-    .forEach(el => el.setAttribute('opacity', '0'));
+function initMap(fromStep=0) {
+  document.querySelectorAll('.path-seg,.mid-evt,.stn-mk').forEach(el=>el.classList.remove('vis'));
+  document.querySelectorAll('[id^="label-"]').forEach(el=>el.setAttribute('opacity','0'));
+  const fog=qs('fog');
+  progressStep=0;
+  for(let s=0;s<=fromStep;s++) applyReveal(s);
+  progressStep=fromStep;
+  if(fog) fog.style.opacity=Math.max(0,.65-fromStep*.09);
+  updatePanel(progressStep);
+}
 
-  const fog = document.getElementById('fog');
+// ═══════════════════════════════════════════════
+//  MINIGAME OVERLAY
+// ═══════════════════════════════════════════════
+const mgOv = qs('mg-overlay'), mgBox = qs('mg-box');
+function openMG(type) { mgOv.classList.add('open'); buildMG(type); }
+function closeMG() { mgOv.classList.remove('open'); mgBox.innerHTML=''; }
 
-  progressStep = 0;
+function buildMG(type) {
+  mgBox.innerHTML='';
+  if (type==='zeitreise') buildZeitreise();
+  else if (type==='horse')   buildHorse();
+  else if (type==='compass') buildCompass();
+  else if (type==='tuersteher') buildTuersteher();
+}
 
-  if (fromStep > 0) {
-    // Reveal everything up to fromStep instantly (no animation delay)
-    for (let s = 1; s <= fromStep; s++) applyReveal(s);
-    progressStep = fromStep;
-    if (fog) fog.style.opacity = Math.max(0, 0.6 - fromStep * 0.065);
-  } else {
-    if (fog) fog.style.opacity = '0.6';
+// ── MG 1: ZEITREISE SCANNER (Station 1) ──
+function buildZeitreise() {
+  mgBox.innerHTML=`
+    <p class="mg-title">🕰️ Zeitreise-Scanner</p>
+    <p class="mg-subtitle">Haus Scholzen</p>
+    <p class="mg-body" style="font-size:12px;color:#d4a574">Scanne den geheimen Code am Eingang!<br><br>
+    (Gib irgendetwas ein und bestätige 😄)</p>
+    <input id="scan-in" class="scan-input" type="text" placeholder="Scan-Code eingeben..." autocomplete="off">
+    <button class="btn btn-green pf" style="padding:12px 20px;font-size:10px;width:100%" id="scan-btn">
+      Scanner aktivieren ✓
+    </button>
+    <p id="scan-err" class="pf" style="color:#f87171;font-size:9px;display:none">Bitte etwas eingeben!</p>
+  `;
+  qs('scan-btn').addEventListener('click', ()=>{
+    if (!qs('scan-in').value.trim()) { qs('scan-err').style.display='block'; return; }
+    closeMG();
+    advanceStep(1);
+  });
+  qs('scan-in').addEventListener('keydown', e=>{ if(e.key==='Enter') qs('scan-btn').click(); });
+}
+
+// ── MG 2: PFERDEFUHRWERK (Station 2) ──
+function buildHorse() {
+  mgBox.innerHTML=`
+    <p class="mg-title">🐎 Pferdefuhrwerk-Ausweichmanöver</p>
+    <p class="mg-subtitle">Päffgen Brauhaus</p>
+    <p class="mg-body" style="font-size:11px;color:#d4a574;margin-bottom:4px">Weiche dem Pferdefuhrwerk aus!<br>Tippe/Klicke um Tische hochzuklappen.</p>
+    <canvas id="horse-canvas" width="340" height="200"></canvas>
+    <div style="display:flex;gap:8px;width:100%">
+      <p id="horse-timer" class="pf" style="color:#fde68a;font-size:10px;flex:1">Zeit: 15s</p>
+      <p id="horse-score" class="pf" style="color:#4ade80;font-size:10px">Punkte: 0</p>
+    </div>
+    <p id="horse-msg" class="pf" style="color:#4ade80;font-size:10px;display:none">🎉 Gut gemacht! Weitermachen...</p>
+  `;
+  runHorseGame();
+}
+
+function runHorseGame() {
+  const canvas = qs('horse-canvas');
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  let t=15, score=0, done=false;
+  // Player (table flipper) at left
+  let playerY = H/2;
+  // Obstacles: horse carts
+  let obstacles = [];
+  let spawnT = 0;
+  let raf;
+  let lastTime = 0;
+
+  function spawnObstacle() {
+    obstacles.push({ x:W+10, y:20+Math.random()*(H-60), w:60, h:40, spd:1.8+Math.random()*1.2 });
   }
 
-  updateInfoPanel(progressStep);
+  canvas.addEventListener('click', e=>{
+    const rect=canvas.getBoundingClientRect();
+    playerY = (e.clientY - rect.top) * (H / rect.height);
+  });
+  canvas.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    const rect=canvas.getBoundingClientRect();
+    playerY = (e.touches[0].clientY - rect.top) * (H / rect.height);
+  },{passive:false});
+
+  const timerInterval = setInterval(()=>{
+    if(done) return;
+    t--;
+    qs('horse-timer').textContent='Zeit: '+t+'s';
+    if(t<=0) { clearInterval(timerInterval); done=true; finishHorse(); }
+  },1000);
+
+  function frame(ts) {
+    if(done) return;
+    const dt = ts - lastTime; lastTime=ts;
+    // Spawn
+    spawnT+=dt;
+    if(spawnT>1800){ spawnT=0; spawnObstacle(); }
+
+    ctx.clearRect(0,0,W,H);
+    // Sky
+    ctx.fillStyle='#87CEEB'; ctx.fillRect(0,0,W,H);
+    // Ground
+    ctx.fillStyle='#c8a86b'; ctx.fillRect(0,H-30,W,30);
+    // Road
+    ctx.fillStyle='#a0784a'; ctx.fillRect(0,H-40,W,20);
+
+    // Player (table shield)
+    ctx.fillStyle='#059669';
+    ctx.fillRect(30, playerY-20, 18, 40);
+    ctx.fillStyle='#4ade80';
+    ctx.font='22px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🪑', 38, playerY+8);
+
+    // Obstacles
+    obstacles.forEach(o=>{
+      o.x -= o.spd * (dt/16);
+      ctx.font='38px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('🐎', o.x, o.y+o.h);
+
+      // Collision check
+      if(!done && o.x<70 && o.x>10) {
+        const py = playerY-20;
+        if(!(playerY+20 < o.y || py > o.y+o.h)) {
+          // Hit! Just flash, no game over (frustration-free)
+          canvas.style.border='3px solid #DC2626';
+          setTimeout(()=>{ if(canvas) canvas.style.border='3px solid #D97706'; },200);
+        } else {
+          score++;
+          qs('horse-score').textContent='Punkte: '+score;
+        }
+      }
+    });
+    obstacles = obstacles.filter(o=>o.x>-80);
+
+    ctx.textAlign='left';
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(ts=>{ lastTime=ts; frame(ts); });
+
+  function finishHorse() {
+    cancelAnimationFrame(raf);
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fde68a';
+    ctx.font='bold 22px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🎉 Bestanden! 🎉', W/2, H/2-10);
+    ctx.font='14px sans-serif';
+    ctx.fillStyle='#d4a574';
+    ctx.fillText('Punkte: '+score, W/2, H/2+20);
+    qs('horse-msg').style.display='block';
+    setTimeout(()=>{ closeMG(); advanceStep(3); }, 1800);
+  }
 }
+
+// ── MG 3: KÖLSCH-KOMPASS (Station 3) ──
+function buildCompass() {
+  mgBox.innerHTML=`
+    <p class="mg-title">🧭 Der Kölsch-Kompass</p>
+    <p class="mg-subtitle">Sünner im Walfisch</p>
+    <p class="mg-body" style="font-size:11px;color:#d4a574">Drehe die Nadel nach Osten (rechts)<br>um Deutz über den Rhein zu finden!<br><br>Drehe/ziehe die Kompass-Nadel.</p>
+    <div id="compass-wrap" style="position:relative;width:220px;height:220px;flex-shrink:0">
+      <svg id="compass-svg" viewBox="0 0 220 220" style="width:220px;height:220px;cursor:grab" xmlns="http://www.w3.org/2000/svg">
+        <!-- Compass rose -->
+        <circle cx="110" cy="110" r="100" fill="#1a0a00" stroke="#D97706" stroke-width="4"/>
+        <circle cx="110" cy="110" r="96" fill="none" stroke="#92400E" stroke-width="1" stroke-dasharray="4 4"/>
+        <!-- Cardinal directions -->
+        <text x="110" y="24" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">N</text>
+        <text x="196" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#4ade80">O</text>
+        <text x="110" y="206" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">S</text>
+        <text x="24" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">W</text>
+        <!-- Target zone highlight (East ~90° from top) -->
+        <path d="M 110 110 L 185 90 A 80 80 0 0 1 185 130 Z" fill="#4ade80" opacity=".15"/>
+        <!-- Needle (rotatable) -->
+        <g id="needle-g" style="transform-origin:110px 110px">
+          <polygon points="110,30 116,110 104,110" fill="#DC2626"/>
+          <polygon points="110,190 116,110 104,110" fill="#eee"/>
+          <circle cx="110" cy="110" r="8" fill="#fde68a" stroke="#D97706" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+    <p id="compass-hint" class="pf" style="color:#92400E;font-size:8px;text-align:center;line-height:1.8">
+      Ziel: Zeige nach Osten → Deutz!
+    </p>
+    <p id="compass-ok" class="pf" style="color:#4ade80;font-size:9px;display:none">✓ Deutz gefunden! Weiter...</p>
+  `;
+  runCompass();
+}
+
+function runCompass() {
+  const needle = qs('needle-g');
+  const svg = qs('compass-svg');
+  let angle = -135; // start pointing roughly NW
+  let dragging = false;
+  let lastAngle = null;
+  let solved = false;
+
+  function getAngle(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    return Math.atan2(clientY-cy, clientX-cx) * 180/Math.PI;
+  }
+
+  function setNeedle(a) {
+    angle = a;
+    needle.style.transform = `rotate(${a}deg)`;
+    // East = 90° (needle pointing right = 90° rotation from top)
+    const diff = ((a % 360) + 360) % 360;
+    const target = 90; // East
+    const dist = Math.min(Math.abs(diff-target), 360-Math.abs(diff-target));
+    if (dist < 18 && !solved) {
+      solved = true;
+      qs('compass-hint').style.display='none';
+      qs('compass-ok').style.display='block';
+      setTimeout(()=>{ closeMG(); advanceStep(5); }, 1400);
+    }
+  }
+
+  svg.addEventListener('mousedown', e=>{ dragging=true; lastAngle=getAngle(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', ()=>dragging=false);
+  window.addEventListener('mousemove', e=>{
+    if(!dragging||solved) return;
+    const a=getAngle(e.clientX,e.clientY);
+    const delta = a - (lastAngle||a);
+    lastAngle=a;
+    setNeedle(angle+delta);
+  });
+  svg.addEventListener('touchstart', e=>{ e.preventDefault(); dragging=true; const t=e.touches[0]; lastAngle=getAngle(t.clientX,t.clientY); },{passive:false});
+  window.addEventListener('touchend', ()=>dragging=false);
+  window.addEventListener('touchmove', e=>{
+    if(!dragging||solved) return;
+    const t=e.touches[0];
+    const a=getAngle(t.clientX,t.clientY);
+    const delta = a-(lastAngle||a); lastAngle=a;
+    setNeedle(angle+delta);
+  });
+
+  // Device orientation support
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', e=>{
+      if(solved) return;
+      if(e.alpha!==null) setNeedle(-e.alpha + 90);
+    });
+  }
+
+  setNeedle(angle);
+}
+
+// ── MG 4: CLINTON-TÜRSTEHER (Station 4) ──
+function buildTuersteher() {
+  let smashes = 0;
+  const needed = 5;
+  mgBox.innerHTML=`
+    <p class="mg-title">🕴️ Der Clinton-Türsteher</p>
+    <p class="mg-subtitle">Lommerzheim</p>
+    <p class="mg-body" style="font-size:11px;color:#d4a574">Der Türsteher lässt euch nicht rein!<br>Drück den Knopf ${needed}x um ihn wegzuscheuchen!</p>
+    <p class="smash-count" id="smash-count">0 / ${needed}</p>
+    <button class="big-nae-btn" id="nae-btn">Nä, dat jeiht nit!</button>
+    <p id="tuer-ok" class="pf" style="color:#4ade80;font-size:9px;display:none">🎉 Ihr seid drin! Willkommen!</p>
+  `;
+  qs('nae-btn').addEventListener('click', ()=>{
+    smashes++;
+    qs('smash-count').textContent=`${smashes} / ${needed}`;
+    if(smashes>=needed){
+      qs('nae-btn').disabled=true;
+      qs('nae-btn').style.opacity='.4';
+      qs('tuer-ok').style.display='block';
+      setTimeout(()=>{ closeMG(); advanceStep(6); showFinale(); }, 1400);
+    }
+  });
+}
+
+// ── FINALE VICTORY ──
+function showFinale() {
+  // Create a full-screen victory overlay
+  const ov = document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center';
+  ov.innerHTML=`
+    <div style="font-size:60px;animation:bob 1s ease-in-out infinite">🍺</div>
+    <p class="pf" style="color:#fde68a;font-size:clamp(12px,3.5vw,18px);line-height:1.8">GESCHAFFT!</p>
+    <p class="pf" style="color:#D97706;font-size:clamp(8px,2.2vw,11px);line-height:2">Alles Gute zum Geburtstag,<br>Nadine! 🎉</p>
+    <p style="font-family:sans-serif;color:#d4a574;font-size:14px;line-height:1.7;max-width:340px">Ihr habt alle Stationen absolviert und seid quer durch Köln gewandert. Prost auf einen unvergesslichen Geburtstag! 🍺🎊</p>
+    <button class="btn btn-amber pf" style="padding:14px 24px;font-size:10px" onclick="this.parentElement.remove()">🍺 Prost!</button>
+  `;
+  document.body.appendChild(ov);
+}
+
+// ── CONNECT STATION CLICKS ON MAP ──
+// Station 1 - only after it's visible
+document.addEventListener('click', e=>{
+  const mg = e.target.closest('[data-station]');
+  if(!mg||!mg.classList.contains('vis')) return;
+  const s=parseInt(mg.dataset.station);
+  if(s===1&&progressStep>=0) { /* station info shown via panel */ }
+  if(s===2&&progressStep>=2) openMG('horse');
+  if(s===3&&progressStep>=4) openMG('compass');
+  if(s===4&&progressStep>=6) openMG('tuersteher');
+});
+
+// Mid-event clicks
+document.addEventListener('click', e=>{
+  const mid = e.target.closest('[data-mid]');
+  if(!mid||!mid.classList.contains('vis')) return;
+  const m=parseInt(mid.dataset.mid);
+  if(m===1&&progressStep===1) { advanceStep(2); }
+  if(m===2&&progressStep===3) { advanceStep(4); }
+  if(m===3&&progressStep===5) { advanceStep(6); showFinale(); }
+});
 
 </script>
 </body>
