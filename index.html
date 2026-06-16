@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Brauhaus Tour</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Brauhaus Tour 🍺</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   @font-face {
@@ -12,29 +11,91 @@
     src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
   }
 
-  body {
-    margin: 0;
-    overflow-x: hidden;
-  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; background: #000; height: 100%; }
+  .pixel-font { font-family: 'Press Start 2P', monospace; }
 
-  .pixel-font {
+  /* ── SCENE SYSTEM ── */
+  .scene {
+    position: fixed;
+    inset: 0;
+    min-height: 100dvh;
+    opacity: 1;
+    transition: opacity 0.55s ease;
+    overflow: hidden;
+  }
+  .scene-hidden { opacity: 0; pointer-events: none; }
+
+  /* ── MENU OVERLAY ── */
+  #menu-btn {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    right: 16px;
+    z-index: 9999;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid #D97706;
+    border-radius: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    display: none;
+    backdrop-filter: blur(4px);
+  }
+  #menu-btn.visible { display: flex; align-items: center; gap: 5px; }
+
+  #menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: max(54px, calc(env(safe-area-inset-top) + 54px));
+    padding-right: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #menu-overlay.open { opacity: 1; pointer-events: all; }
+
+  .menu-panel {
+    background: #1a0a00;
+    border: 3px solid #D97706;
+    border-radius: 14px;
+    padding: 12px;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .menu-item {
     font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #fde68a;
+    background: rgba(217,119,6,0.15);
+    border: 1px solid #92400E;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .menu-item:active { background: rgba(217,119,6,0.4); }
+  .menu-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #92400E;
+    text-align: center;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #3d1a00;
   }
 
-  /* --- Scene 1: Welcome --- */
-  #scene-welcome {
-    background: #000;
-    height: 100vh;
-  }
+  /* ── SCENE 1: WELCOME ── */
+  #scene-welcome { background: #000; display: flex; align-items: center; justify-content: center; padding: 24px; }
 
-  .blink-text {
-    animation: blink 1.1s steps(1) infinite;
-  }
-
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    50.01%, 100% { opacity: 0; }
-  }
+  .blink-text { animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 0%,50% { opacity:1; } 50.01%,100% { opacity:0; } }
 
   .arcade-input {
     background: transparent;
@@ -42,485 +103,1006 @@
     color: #fff;
     text-align: center;
     caret-color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    padding: 14px 16px;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
   }
-
-  .arcade-input:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
-  }
+  .arcade-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
 
   .arcade-btn {
     background: #fff;
     color: #000;
-    transition: transform 0.08s ease, box-shadow 0.08s ease;
-    box-shadow: 4px 4px 0px #555;
+    font-family: 'Press Start 2P', monospace;
+    box-shadow: 4px 4px 0 #555;
+    transition: transform 0.08s, box-shadow 0.08s;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    padding: 14px 20px;
+    font-size: 11px;
+    min-height: 48px;
   }
+  .arcade-btn:active { transform: translate(4px,4px); box-shadow: none; }
 
-  .arcade-btn:active {
-    transform: translate(4px, 4px);
-    box-shadow: 0px 0px 0px #555;
+  .btn-amber {
+    background: #D97706;
+    color: #fff;
+    box-shadow: 4px 4px 0 #92400E;
   }
+  .btn-amber:active { transform: translate(4px,4px); box-shadow: none; }
 
-  .error-shake {
-    animation: shake 0.4s ease;
-  }
+  .error-shake { animation: shake 0.4s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-8px); }
-    40%, 80% { transform: translateX(8px); }
-  }
-
-  /* --- Scene transitions --- */
-  .scene {
-    position: fixed;
-    inset: 0;
-    transition: opacity 0.6s ease;
-  }
-
-  .scene-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  /* --- Scene 2: Intro / Living Room --- */
+  /* ── SCENE 2: INTRO ── */
   #scene-intro {
-    background: linear-gradient(180deg, #F2D6A2 0%, #D9A86C 60%, #B9824F 100%);
+    background: linear-gradient(180deg, #F2D6A2 0%, #D9A86C 55%, #B9824F 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .character-wrap {
+    flex: 1;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(6px, 2.5vw, 20px);
+    padding: 0 10px 6px;
     overflow: hidden;
   }
 
-  .room-deco {
-    opacity: 0.35;
-  }
-
-  .character-sprite {
-    width: 26vw;
-    max-width: 130px;
-    transition: transform 0.3s ease;
-  }
-
-  .character-card {
+  /* Side chars (Bennet, Maria) */
+  .char-card {
     background: #fff8ec;
     border: 3px solid #7C2D12;
-    border-radius: 16px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 4px 4px;
+    width: clamp(72px, 22vw, 115px);
+    flex-shrink: 0;
+  }
+  /* Center card (Nadine) — bigger */
+  .char-card.center {
+    width: clamp(88px, 28vw, 140px);
+    border-color: #D97706;
+    border-width: 3px;
+    box-shadow: 0 0 16px rgba(217,119,6,0.4);
+    order: 0;
   }
 
-  .character-img-box {
-    height: 38vh;
-    max-height: 220px;
+  .char-img-box {
+    height: clamp(110px, 28vh, 200px);
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
   }
-
-  .nadine-enter {
-    animation: slideIn 0.7s ease-out forwards;
+  /* Nadine gets slightly taller box */
+  .char-card.center .char-img-box {
+    height: clamp(130px, 34vh, 240px);
   }
+  .char-img-box img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
 
-  @keyframes slideIn {
-    from { transform: translateX(120%) scale(0.8); opacity: 0; }
-    to { transform: translateX(0) scale(1); opacity: 1; }
+  .char-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #7C2D12;
+    margin-top: 4px;
+    text-align: center;
+  }
+  .char-card.center .char-label { color: #D97706; font-size: 8px; }
+
+  /* Bennet left, Maria right, Nadine center */
+  #bennet-card { order: -1; }
+  #nadine-card  { order: 0; opacity: 0; }
+  #maria-card   { order: 1; }
+
+  .nadine-slide-in { animation: slideInTop 0.7s ease-out forwards; }
+  @keyframes slideInTop {
+    from { transform: translateY(-60px) scale(0.85); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
   }
 
   .dialogue-box {
+    width: calc(100% - 24px);
+    max-width: 480px;
+    margin-bottom: 10px;
     background: #fffaf0;
     border: 4px solid #7C2D12;
     border-radius: 18px;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+    padding: 14px 16px 10px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+    cursor: pointer;
+    user-select: none;
   }
-
   .dialogue-text {
     font-family: 'Press Start 2P', monospace;
-    line-height: 1.8;
-    min-height: 3.6em;
+    font-size: clamp(8px, 2.2vw, 11px);
+    color: #78350F;
+    line-height: 1.9;
+    min-height: 3.8em;
+  }
+  .continue-prompt { animation: bob 1s ease-in-out infinite; display: inline-block; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+
+  /* ── SCENE 2.5: CAULDRON ── */
+  #scene-loading {
+    background: linear-gradient(180deg, #1a0a00 0%, #2d1200 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 20px;
   }
 
-  .continue-prompt {
-    animation: bob 1s ease-in-out infinite;
+  .cauldron-glow { filter: drop-shadow(0 0 18px #f97316aa); }
+
+  .bubble {
+    animation: rise var(--dur) ease-in infinite;
+    animation-delay: var(--delay);
+    opacity: 0;
+  }
+  @keyframes rise {
+    0%   { transform:translateY(0) scale(1);    opacity:0.8; }
+    100% { transform:translateY(-42px) scale(1.4); opacity:0; }
   }
 
-  @keyframes bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-  }
-
-  /* --- Scene 3: Map --- */
-  #scene-map {
-    background: linear-gradient(180deg, #FFF4D6 0%, #F7E2B8 100%);
-    overflow-y: auto;
-  }
-
-  .station-dot {
-    transition: transform 0.15s ease, filter 0.15s ease;
-    cursor: pointer;
-  }
-
-  .station-dot:active {
-    transform: scale(0.92);
-  }
-
-  .station-dot.selected circle {
-    filter: drop-shadow(0 0 6px #FBBF24);
-  }
-
-  .path-line {
-    stroke-dasharray: 10 10;
-    stroke: #B45309;
-    stroke-width: 4;
-    fill: none;
-  }
-
-  .station-label {
+  .ingredient {
     font-family: 'Press Start 2P', monospace;
+    font-size: clamp(8px, 2.2vw, 11px);
+    color: #fde68a;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-18px);
+    transition: opacity 0.5s ease, transform 0.55s ease;
+    padding: 2px 0;
+  }
+  .ingredient.dropping { opacity: 1; transform: translateY(0); }
+  .ingredient.dropped  { opacity: 0.3; transform: translateY(6px); color: #92400E;
+    transition: opacity 1s, transform 0.8s, color 0.8s; }
+
+  .loading-bar-track {
+    background: #3d1a00;
+    border: 2px solid #92400E;
+    border-radius: 999px;
+    overflow: hidden;
+    width: min(320px, 85vw);
+    height: 20px;
+  }
+  #loading-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* ── SCENE 3: MAP ── */
+  #scene-map {
+    background: linear-gradient(180deg, #ddf0f8 0%, #c8e4f0 100%);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  .rhine { fill: #5ab4d6; opacity: 0.75; }
+  .rhine-shade { fill: #7ec8e3; opacity: 0.35; }
+  .road { stroke: #c9b99a; stroke-width: 1.5; fill: none; opacity: 0.45; }
+  .road-main { stroke: #b0996e; stroke-width: 3; fill: none; opacity: 0.55; }
+  .road-ring  { stroke: #b0996e; stroke-width: 2.5; fill: none; opacity: 0.45; }
+
+  .path-seg {
+    stroke: #D97706;
+    stroke-width: 5;
+    stroke-dasharray: 11 7;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+  .path-seg.visible { opacity: 1; }
+
+  .mid-event { opacity:0; transition:opacity 0.6s ease; cursor:pointer; }
+  .mid-event.visible { opacity:1; }
+
+  .station-marker { opacity:0; transition:opacity 0.6s ease; cursor:pointer; }
+  .station-marker.visible { opacity:1; }
+
+  @keyframes pulse {
+    0%,100% { r:24; opacity:0.45; }
+    50%      { r:30; opacity:0.12; }
   }
 
   .info-panel {
     background: #fffaf0;
     border: 3px solid #7C2D12;
     border-radius: 16px;
+    padding: 16px;
   }
+
+  /* Touch-friendly action button */
+  .action-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: #D97706;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #92400E;
+    padding: 14px 16px;
+    min-height: 52px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    line-height: 1.6;
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .action-btn:active { transform:translate(4px,4px); box-shadow:none; }
 </style>
 </head>
 <body class="pixel-font">
 
-  <!-- SCENE 1: WELCOME -->
-  <section id="scene-welcome" class="scene flex items-center justify-center px-6">
-    <div class="flex flex-col items-center gap-8 text-center">
-      <p id="welcome-text" class="blink-text text-white text-base sm:text-2xl tracking-widest">
-        Bitte Namen eingeben
-      </p>
-      <div class="flex flex-col items-center gap-4 w-full max-w-xs">
-        <input
-          id="name-input"
-          type="text"
-          maxlength="20"
-          class="arcade-input pixel-font w-full px-4 py-3 text-sm sm:text-base"
-          placeholder="..."
-        >
-        <button
-          id="confirm-btn"
-          class="arcade-btn pixel-font px-6 py-3 text-xs sm:text-sm w-full"
-        >
-          Bestätigen
-        </button>
-        <p id="error-msg" class="text-red-500 text-[10px] sm:text-xs hidden">
-          Falscher Name! Versuch's nochmal!
-        </p>
-      </div>
-    </div>
-  </section>
+<!-- ══ HAMBURGER MENU (shown after login) ══ -->
+<button id="menu-btn" aria-label="Menü">
+  <span style="font-size:16px; color:#D97706;">☰</span>
+  <span style="font-family:'Press Start 2P',monospace; font-size:7px; color:#fde68a;">Menü</span>
+</button>
 
-  <!-- SCENE 2: INTRO DIALOGUE -->
-  <section id="scene-intro" class="scene scene-hidden flex flex-col items-center justify-end relative px-4 pb-6">
+<div id="menu-overlay">
+  <div class="menu-panel">
+    <p class="menu-title">⚡ Schnellreise</p>
+    <button class="menu-item" onclick="jumpToStation(0)">🏠 Start (Ehrenfeld)</button>
+    <button class="menu-item" onclick="jumpToStation(2)">🏠 Station 1 – Haus Scholzen</button>
+    <button class="menu-item" onclick="jumpToStation(4)">🍻 Station 2 – Päffgen</button>
+    <button class="menu-item" onclick="jumpToStation(6)">🐳 Station 3 – Sünner i. Walfisch</button>
+    <button class="menu-item" onclick="jumpToStation(8)">🏆 Station 4 – Lommerzheim</button>
+    <button class="menu-item" style="color:#f87171; border-color:#7f1d1d;"
+      onclick="resetProgress()">🗑 Fortschritt zurücksetzen</button>
+  </div>
+</div>
 
-    <!-- Decorative room elements (simple shapes for "vintage living room" feel) -->
-    <div class="room-deco absolute top-6 left-6 w-16 h-20 bg-amber-900 rounded-t-full"></div>
-    <div class="room-deco absolute top-10 right-8 w-24 h-16 bg-amber-800 rounded-lg"></div>
-    <div class="room-deco absolute top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-amber-700 rounded-full"></div>
-
-    <!-- Characters -->
-    <div class="flex-1 w-full flex items-end justify-center gap-4 sm:gap-8 pb-4 relative">
-
-      <!-- Bennet -->
-      <div class="character-card flex flex-col items-center p-2 character-sprite">
-        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
-          <img src="assets/bennet.png" alt="Bennet" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <span style="display:none;" class="text-4xl">🐯</span>
-        </div>
-        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Bennet</p>
-      </div>
-
-      <!-- Maria -->
-      <div class="character-card flex flex-col items-center p-2 character-sprite">
-        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
-          <img src="assets/maria.png" alt="Maria" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <span style="display:none;" class="text-4xl">🧥</span>
-        </div>
-        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Maria</p>
-      </div>
-
-      <!-- Nadine (slides in) -->
-      <div id="nadine-card" class="character-card flex flex-col items-center p-2 character-sprite opacity-0">
-        <div class="character-img-box w-full flex items-end justify-center overflow-hidden">
-          <img src="assets/nadine.png" alt="Nadine" class="w-full h-full object-contain object-bottom" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <span style="display:none;" class="text-4xl">🎉</span>
-        </div>
-        <p class="font-sans text-[10px] sm:text-xs mt-1 text-amber-900">Nadine</p>
-      </div>
-    </div>
-
-    <!-- Dialogue box -->
-    <div class="dialogue-box w-full max-w-md p-4 sm:p-5 relative z-10">
-      <p id="dialogue-text" class="dialogue-text text-amber-900 text-xs sm:text-sm"></p>
-      <div class="flex justify-end mt-2">
-        <p id="continue-prompt" class="continue-prompt font-sans text-amber-700 text-xs">▼ klicken</p>
-        <button id="to-map-btn" class="arcade-btn px-4 py-2 text-[10px] sm:text-xs hidden">
-          Zur Karte
-        </button>
-      </div>
-    </div>
-
-  </section>
-
-  <!-- SCENE 3: MAP -->
-  <section id="scene-map" class="scene scene-hidden flex flex-col items-center px-4 py-8 sm:py-12">
-
-    <div class="text-center mb-6 max-w-md">
-      <h1 class="text-amber-900 text-base sm:text-xl mb-2 leading-relaxed">
-        Deine Brauhaus Tour
-      </h1>
-      <p class="font-sans text-amber-800 text-xs sm:text-sm">
-        Köln-Ehrenfeld &amp; Umgebung
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCENE 1 · WELCOME                          -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="scene-welcome" class="scene">
+  <div class="flex flex-col items-center gap-8 text-center w-full max-w-xs mx-auto">
+    <p class="blink-text text-white text-sm sm:text-xl tracking-widest leading-loose">
+      Bitte Namen<br>eingeben
+    </p>
+    <div class="flex flex-col items-center gap-4 w-full">
+      <input id="name-input" type="text" maxlength="20"
+        class="arcade-input" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button id="confirm-btn" class="arcade-btn w-full">Bestätigen</button>
+      <p id="error-msg" class="text-red-400 text-[10px] leading-relaxed hidden">
+        Falscher Name!<br>Versuch's nochmal! 😅
       </p>
     </div>
+  </div>
+</section>
 
-    <div class="w-full max-w-4xl flex flex-col lg:flex-row gap-6 items-center lg:items-start justify-center">
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCENE 2 · INTRO DIALOGUE                   -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="scene-intro" class="scene scene-hidden">
+  <div class="absolute top-4 left-4 w-12 h-16 bg-amber-900 rounded-t-full opacity-25 pointer-events-none"></div>
+  <div class="absolute top-6 right-5 w-16 h-12 bg-amber-800 rounded-lg opacity-20 pointer-events-none"></div>
 
-      <!-- Map -->
-      <div class="relative w-full max-w-sm">
-        <svg viewBox="0 0 300 600" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
-          <!-- Dotted path connecting stations -->
-          <path class="path-line" d="M 150 60 L 220 200 L 90 340 L 200 500"></path>
-
-          <!-- Station 1: Haus Scholzen -->
-          <g class="station-dot selected" data-station="1">
-            <circle cx="150" cy="60" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-            <text x="150" y="67" text-anchor="middle" font-size="22" font-family="sans-serif">🏠</text>
-          </g>
-
-          <!-- Station 2: Braustelle -->
-          <g class="station-dot" data-station="2">
-            <circle cx="220" cy="200" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-            <text x="220" y="207" text-anchor="middle" font-size="22" font-family="sans-serif">🍺</text>
-          </g>
-
-          <!-- Station 3: Päffgen -->
-          <g class="station-dot" data-station="3">
-            <circle cx="90" cy="340" r="30" fill="#D97706" stroke="#7C2D12" stroke-width="3"></circle>
-            <text x="90" y="347" text-anchor="middle" font-size="22" font-family="sans-serif">🍻</text>
-          </g>
-
-          <!-- Station 4: Lommerzheim -->
-          <g class="station-dot" data-station="4">
-            <circle cx="200" cy="500" r="32" fill="#92400E" stroke="#451A03" stroke-width="3"></circle>
-            <text x="200" y="508" text-anchor="middle" font-size="22" font-family="sans-serif">🏛️</text>
-          </g>
-        </svg>
-
-        <!-- Station name labels -->
-        <div class="absolute inset-0 pointer-events-none">
-          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 1%; left: 55%;">Haus Scholzen</p>
-          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 30%; left: 73%;">Braustelle</p>
-          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 53%; left: 0%;">Päffgen</p>
-          <p class="station-label absolute text-[7px] sm:text-[9px] text-amber-900 text-center w-24" style="top: 80%; left: 58%;">Lommerzheim</p>
-        </div>
+  <!-- Characters: Bennet | Nadine (center) | Maria -->
+  <div class="character-wrap">
+    <div id="bennet-card" class="char-card">
+      <div class="char-img-box">
+        <img src="assets/bennet.png" alt="Bennet" onerror="this.style.display='none'">
       </div>
-
-      <!-- Info panel -->
-      <div class="info-panel w-full max-w-sm p-4 sm:p-5">
-        <p class="font-sans text-amber-700 text-[10px] sm:text-xs mb-2" id="panel-eyebrow">
-          Deine nächste Station:
-        </p>
-        <h2 id="panel-title" class="text-amber-900 text-sm sm:text-base mb-2 leading-relaxed">
-          Haus Scholzen
-        </h2>
-        <p id="panel-subtitle" class="font-sans text-amber-700 text-xs sm:text-sm mb-3 italic">
-          Ehrenfeld
-        </p>
-        <p id="panel-desc" class="font-sans text-amber-800 text-xs sm:text-sm leading-relaxed">
-          Ein urig-gemütliches Brauhaus mit langer Geschichte. Hier startet eure Tour. (Mini-Spiel folgt bald!)
-        </p>
-      </div>
-
+      <span class="char-label">Bennet</span>
     </div>
 
-  </section>
+    <div id="nadine-card" class="char-card center">
+      <div class="char-img-box">
+        <img src="assets/nadine.png" alt="Nadine" onerror="this.style.display='none'">
+      </div>
+      <span class="char-label">Nadine ⭐</span>
+    </div>
 
-  <script>
-    // ============ SCENE 1: WELCOME ============
-    const sceneWelcome = document.getElementById('scene-welcome');
-    const sceneIntro = document.getElementById('scene-intro');
-    const sceneMap = document.getElementById('scene-map');
-    const nameInput = document.getElementById('name-input');
-    const confirmBtn = document.getElementById('confirm-btn');
-    const errorMsg = document.getElementById('error-msg');
+    <div id="maria-card" class="char-card">
+      <div class="char-img-box">
+        <img src="assets/maria.png" alt="Maria" onerror="this.style.display='none'">
+      </div>
+      <span class="char-label">Maria</span>
+    </div>
+  </div>
 
-    function checkName() {
-      const name = nameInput.value.trim().toLowerCase();
-      if (name === 'nadine') {
-        errorMsg.classList.add('hidden');
-        sceneWelcome.classList.add('scene-hidden');
-        sceneIntro.classList.remove('scene-hidden');
-        startDialogue();
+  <!-- Dialogue -->
+  <div id="dialogue-box" class="dialogue-box mx-3">
+    <p id="dialogue-text" class="dialogue-text"></p>
+    <div class="flex justify-end mt-2 items-center gap-3">
+      <span id="continue-prompt" class="continue-prompt text-amber-700 text-[10px]">▼ tippen</span>
+      <button id="to-loading-btn" class="btn-amber arcade-btn px-4 py-2 text-[9px] hidden">
+        Zur Karte! 🗺️
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCENE 2.5 · CAULDRON LOADING               -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="scene-loading" class="scene scene-hidden">
+  <p class="pixel-font text-amber-400 text-[9px] sm:text-[11px] text-center px-4 mb-3 leading-loose">
+    Eine mausige Brauhaustour<br>wird gebraut...
+  </p>
+
+  <div id="ingredients-zone" class="flex flex-col items-center gap-1 mb-2 min-h-[90px] justify-end">
+    <span class="ingredient">🎉 Gute Laune...</span>
+    <span class="ingredient">🍺 Bierdurst...</span>
+    <span class="ingredient">😌 Kölsche Gelassenheit...</span>
+    <span class="ingredient">🚬 Zigaretten...</span>
+    <span class="ingredient">🥨 Ein halver Hahn...</span>
+  </div>
+
+  <svg viewBox="0 0 200 160" width="min(220px, 58vw)" class="cauldron-glow mb-3" xmlns="http://www.w3.org/2000/svg">
+    <circle class="bubble" cx="80"  cy="52" r="4"   fill="#fde68a" style="--dur:1.4s;--delay:0s"/>
+    <circle class="bubble" cx="100" cy="47" r="5"   fill="#fed7aa" style="--dur:1.8s;--delay:0.4s"/>
+    <circle class="bubble" cx="120" cy="54" r="3"   fill="#fde68a" style="--dur:1.2s;--delay:0.8s"/>
+    <circle class="bubble" cx="90"  cy="50" r="3.5" fill="#fdba74" style="--dur:1.6s;--delay:1.1s"/>
+    <rect x="72"  y="138" width="10" height="18" rx="3" fill="#5c2d0a"/>
+    <rect x="118" y="138" width="10" height="18" rx="3" fill="#5c2d0a"/>
+    <ellipse cx="100" cy="110" rx="62" ry="45" fill="#3d1a00" stroke="#92400E" stroke-width="4"/>
+    <ellipse cx="100" cy="74"  rx="50" ry="14" fill="#c2410c" opacity="0.9"/>
+    <ellipse cx="100" cy="74"  rx="35" ry="8"  fill="#ea580c" opacity="0.6"/>
+    <ellipse cx="85"  cy="72"  rx="8"  ry="4"  fill="#fb923c" opacity="0.5"/>
+    <ellipse cx="115" cy="73"  rx="6"  ry="3"  fill="#fb923c" opacity="0.4"/>
+    <ellipse cx="100" cy="70"  rx="55" ry="16" fill="none" stroke="#92400E" stroke-width="5"/>
+    <ellipse cx="100" cy="70"  rx="55" ry="16" fill="#7c2d12" opacity="0.4"/>
+    <path d="M 45 90 Q 28 75 38 62" stroke="#92400E" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 155 90 Q 172 75 162 62" stroke="#92400E" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="75" cy="95" rx="12" ry="20" fill="white" opacity="0.07" transform="rotate(-20,75,95)"/>
+  </svg>
+
+  <div class="loading-bar-track">
+    <div id="loading-bar-fill"></div>
+  </div>
+  <p class="pixel-font text-amber-600 text-[8px] mt-2" id="loading-pct">0%</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCENE 3 · MAP                              -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="scene-map" class="scene scene-hidden">
+
+  <div class="text-center pt-5 pb-2 px-4">
+    <h1 class="text-amber-900 text-xs sm:text-base mb-1 leading-loose">Deine Brauhaus Tour 🍺</h1>
+    <p class="font-sans text-amber-700 text-xs">Köln – Ehrenfeld bis Deutz</p>
+  </div>
+
+  <div class="w-full max-w-4xl flex flex-col lg:flex-row gap-4 px-3 pb-6 items-start justify-center">
+
+    <!-- SVG MAP -->
+    <div class="relative w-full max-w-md mx-auto flex-shrink-0">
+      <svg id="cologne-map" viewBox="0 0 360 560" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- ── Sky background ── -->
+        <rect width="360" height="560" fill="#ddf0f8"/>
+
+        <!-- ── Left bank ground ── -->
+        <path d="M 0 0 L 175 0 C 180 60 176 140 182 210
+                   C 186 270 178 350 184 420
+                   C 188 470 181 520 184 560
+                   L 0 560 Z"
+              fill="#f0ebe0"/>
+
+        <!-- ── Right bank ground ── -->
+        <path d="M 360 0 L 205 0 C 200 60 204 140 198 210
+                   C 194 270 202 350 196 420
+                   C 192 470 199 520 196 560
+                   L 360 560 Z"
+              fill="#f0ebe0"/>
+
+        <!-- ── Rhine river (main body) ── -->
+        <path d="M 175 0 C 180 60 176 140 182 210
+                   C 186 270 178 350 184 420
+                   C 188 470 181 520 184 560
+                 L 205 560
+                 C 199 520 206 470 202 420
+                   C 196 350 204 270 198 210
+                   C 192 140 196 60 191 0 Z"
+              class="rhine"/>
+
+        <!-- Rhine shimmer -->
+        <path d="M 181 80 C 183 130 180 190 183 250"
+              stroke="white" stroke-width="2" fill="none" opacity="0.18" stroke-linecap="round"/>
+        <path d="M 188 100 C 190 160 187 220 190 300"
+              stroke="white" stroke-width="1.5" fill="none" opacity="0.12" stroke-linecap="round"/>
+
+        <!-- ── RHEIN label ── -->
+        <text x="190" y="300" fill="#3d8fb5" font-size="8" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold" opacity="0.7"
+              transform="rotate(-90,190,300)">R H E I N</text>
+
+        <!-- ── Left bank: major roads ── -->
+        <!-- Aachener Str (horizontal, upper) -->
+        <line x1="0"   y1="95"  x2="175" y2="95"  class="road-main"/>
+        <!-- Venloer Str (diagonal) -->
+        <path d="M 0 170 Q 60 155 120 145 L 175 140" class="road-main" stroke="#b0996e" stroke-width="2.5" fill="none" opacity="0.5"/>
+        <!-- Innere Kanalstr (ring road arc) -->
+        <path d="M 30 220 Q 80 180 140 170 Q 165 166 175 165" class="road-ring" fill="none"/>
+        <!-- Gürtel / ring roads (left) -->
+        <path d="M 0 310 Q 50 280 110 270 Q 150 265 175 262" class="road-ring" fill="none"/>
+        <!-- Ehrenfelder Str -->
+        <line x1="60"  y1="60"  x2="60"  y2="300" class="road"/>
+        <!-- Subbelrather Str -->
+        <line x1="25"  y1="0"   x2="25"  y2="280" class="road"/>
+        <!-- Neusser Str -->
+        <line x1="110" y1="0"   x2="110" y2="200" class="road"/>
+        <!-- Friesenwall -->
+        <line x1="145" y1="160" x2="175" y2="220" class="road"/>
+        <!-- Ringe (inner city) -->
+        <path d="M 100 200 Q 130 185 158 190 L 175 195" class="road-main" fill="none"/>
+        <!-- Schildergasse area -->
+        <line x1="120" y1="250" x2="175" y2="250" class="road"/>
+        <!-- Rheinufer left -->
+        <line x1="168" y1="0"   x2="168" y2="560" class="road" opacity="0.3"/>
+
+        <!-- ── Right bank: major roads ── -->
+        <line x1="230" y1="0"   x2="230" y2="560" class="road"/>
+        <line x1="270" y1="0"   x2="270" y2="560" class="road"/>
+        <line x1="315" y1="0"   x2="315" y2="560" class="road"/>
+        <line x1="205" y1="200" x2="360" y2="200" class="road-main"/>
+        <line x1="205" y1="290" x2="360" y2="290" class="road-main"/>
+        <line x1="205" y1="370" x2="360" y2="370" class="road"/>
+        <!-- Rheinufer right -->
+        <line x1="205" y1="0"   x2="205" y2="560" class="road" opacity="0.3"/>
+
+        <!-- ── BRIDGES ── -->
+        <!-- Hohenzollernbrücke (rail, ~210-215 y) -->
+        <rect x="175" y="208" width="30" height="7" fill="#b0996e" rx="2" opacity="0.85"/>
+        <line x1="178" y1="208" x2="178" y2="215" stroke="#8b7355" stroke-width="1"/>
+        <line x1="183" y1="208" x2="183" y2="215" stroke="#8b7355" stroke-width="1"/>
+        <line x1="188" y1="208" x2="188" y2="215" stroke="#8b7355" stroke-width="1"/>
+        <line x1="193" y1="208" x2="193" y2="215" stroke="#8b7355" stroke-width="1"/>
+        <line x1="198" y1="208" x2="198" y2="215" stroke="#8b7355" stroke-width="1"/>
+        <text x="190" y="204" fill="#7a6545" font-size="5.5" text-anchor="middle"
+              font-family="sans-serif">Hohenzollernbrücke</text>
+
+        <!-- Deutzer Brücke (~320 y) — this is the BRIDGE EVENT crossing -->
+        <rect x="175" y="318" width="30" height="8" fill="#b0996e" rx="2" opacity="0.9"/>
+        <line x1="179" y1="318" x2="179" y2="326" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="184" y1="318" x2="184" y2="326" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="190" y1="318" x2="190" y2="326" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="196" y1="318" x2="196" y2="326" stroke="#8b7355" stroke-width="1.5"/>
+        <line x1="201" y1="318" x2="201" y2="326" stroke="#8b7355" stroke-width="1.5"/>
+        <text x="190" y="315" fill="#7a6545" font-size="5.5" text-anchor="middle"
+              font-family="sans-serif">Deutzer Brücke</text>
+
+        <!-- Severinsbrücke (~420 y) -->
+        <rect x="175" y="415" width="28" height="6" fill="#b0996e" rx="2" opacity="0.7"/>
+        <text x="190" y="411" fill="#7a6545" font-size="5" text-anchor="middle"
+              font-family="sans-serif">Severinsbrücke</text>
+
+        <!-- ── LANDMARKS & LABELS ── -->
+        <!-- Dom (Cathedral) left bank near river ~210 -->
+        <text x="155" y="230" font-size="18" text-anchor="middle">⛪</text>
+        <text x="155" y="244" fill="#6b5740" font-size="6" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold">Dom</text>
+
+        <!-- Neighbourhood labels -->
+        <text x="45"  y="75"  fill="#9a845c" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">Ehrenfeld</text>
+        <text x="100" y="165" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Innenstadt</text>
+        <text x="110" y="295" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Altstadt</text>
+        <text x="270" y="260" fill="#9a845c" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">Deutz</text>
+        <text x="270" y="170" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Mülheim</text>
+        <text x="270" y="380" fill="#9a845c" font-size="6" font-family="sans-serif" text-anchor="middle">Kalk</text>
+
+        <!-- ── HOME marker (always visible) ── -->
+        <g id="home-marker">
+          <circle cx="45" cy="105" r="16" fill="#059669" stroke="#065f46" stroke-width="2.5"/>
+          <text x="45" y="111" font-size="14" text-anchor="middle">🏠</text>
+        </g>
+        <text x="45" y="126" fill="#065f46" font-size="6.5" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold">Start</text>
+
+        <!-- ══════════════════════════════════════
+             TOUR PATH SEGMENTS (fog-of-war)
+             Route: Home (Ehrenfeld) →
+                    Haus Scholzen (Ehrenfeld) →
+                    Päffgen (Friesenviertel, left bank) →
+                    Sünner im Walfisch (Altstadt, LEFT bank) →
+                    [BRIDGE EVENT: Deutzer Brücke] →
+                    Lommerzheim (Deutz, RIGHT bank)
+        ══════════════════════════════════════ -->
+
+        <!-- Seg A: Home → mid-1 (Ehrenfeld streets) -->
+        <path id="seg-a" class="path-seg"
+          d="M 45 105 C 48 115 56 125 65 135 C 72 143 78 150 82 158"/>
+
+        <!-- Seg B: mid-1 → Station 1 (Haus Scholzen, still Ehrenfeld) -->
+        <path id="seg-b" class="path-seg"
+          d="M 82 158 C 87 168 90 178 92 190 C 94 200 93 210 93 220"/>
+
+        <!-- Seg C: Station 1 → mid-2 (heading into Innenstadt) -->
+        <path id="seg-c" class="path-seg"
+          d="M 93 220 C 97 235 106 248 115 258 C 121 264 126 268 130 272"/>
+
+        <!-- Seg D: mid-2 → Station 2 (Päffgen, Friesenviertel) -->
+        <path id="seg-d" class="path-seg"
+          d="M 130 272 C 135 282 138 292 138 302 C 138 308 137 313 136 318"/>
+
+        <!-- Seg E: Station 2 → mid-3 (through Altstadt towards river) -->
+        <path id="seg-e" class="path-seg"
+          d="M 136 318 C 138 328 143 336 148 342 C 153 348 158 352 162 356"/>
+
+        <!-- Seg F: mid-3 → Station 3 (Sünner im Walfisch, Altstadt LEFT bank) -->
+        <path id="seg-f" class="path-seg"
+          d="M 162 356 C 163 360 163 364 163 368 C 163 372 162 376 162 380"/>
+
+        <!-- Seg G: Station 3 → BRIDGE EVENT (Deutzer Brücke crossing) -->
+        <path id="seg-g" class="path-seg"
+          d="M 162 380 C 164 395 168 408 172 418 C 176 424 181 324 190 322 C 197 321 205 322 212 322"/>
+
+        <!-- Seg H: BRIDGE EVENT → Station 4 (Lommerzheim, Deutz RIGHT bank) -->
+        <path id="seg-h" class="path-seg"
+          d="M 212 322 C 224 320 236 310 248 304 C 256 299 262 296 268 294"/>
+
+        <!-- ══ MID-EVENT MARKERS ══ -->
+
+        <!-- Mid 1: street event (Ehrenfeld side streets) -->
+        <g id="mid-1" class="mid-event" data-mid="1">
+          <circle cx="82" cy="158" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
+          <text x="82" y="163" font-size="12" text-anchor="middle">⚡</text>
+        </g>
+
+        <!-- Mid 2: street event (Innenstadt / Friesenviertel) -->
+        <g id="mid-2" class="mid-event" data-mid="2">
+          <circle cx="130" cy="272" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
+          <text x="130" y="277" font-size="12" text-anchor="middle">⚡</text>
+        </g>
+
+        <!-- Mid 3: street event (Altstadt) -->
+        <g id="mid-3" class="mid-event" data-mid="3">
+          <circle cx="162" cy="356" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
+          <text x="162" y="361" font-size="12" text-anchor="middle">⚡</text>
+        </g>
+
+        <!-- Mid 4: BRIDGE EVENT on Deutzer Brücke ★ -->
+        <g id="mid-4" class="mid-event" data-mid="4">
+          <circle cx="192" cy="322" r="15" fill="#B45309" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="192" y="328" font-size="13" text-anchor="middle">🌉</text>
+        </g>
+
+        <!-- ══ BREWERY STATIONS ══ -->
+
+        <!-- Station 1: Haus Scholzen (Ehrenfeld, left bank) -->
+        <g id="station-1" class="station-marker" data-station="1">
+          <circle class="outer" cx="93" cy="220" r="24" fill="#D97706" opacity="0.22"/>
+          <circle cx="93" cy="220" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="93" y="226" font-size="15" text-anchor="middle">🏠</text>
+        </g>
+        <text id="label-1" x="93" y="243" fill="#7C2D12" font-size="6" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold" opacity="0">Haus Scholzen</text>
+
+        <!-- Station 2: Päffgen (Friesenviertel, left bank) -->
+        <g id="station-2" class="station-marker" data-station="2">
+          <circle class="outer" cx="136" cy="318" r="24" fill="#D97706" opacity="0.22"/>
+          <circle cx="136" cy="318" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="136" y="324" font-size="15" text-anchor="middle">🍻</text>
+        </g>
+        <text id="label-2" x="136" y="341" fill="#7C2D12" font-size="6" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold" opacity="0">Päffgen</text>
+
+        <!-- Station 3: Sünner im Walfisch (Altstadt, LEFT bank) -->
+        <g id="station-3" class="station-marker" data-station="3">
+          <circle class="outer" cx="162" cy="380" r="24" fill="#D97706" opacity="0.22"/>
+          <circle cx="162" cy="380" r="17" fill="#D97706" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="162" y="386" font-size="15" text-anchor="middle">🐳</text>
+        </g>
+        <text id="label-3" x="162" y="403" fill="#7C2D12" font-size="6" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold" opacity="0">Sünner i. Walfisch</text>
+
+        <!-- Station 4: Lommerzheim (Deutz, RIGHT bank — FINISH) -->
+        <g id="station-4" class="station-marker" data-station="4">
+          <circle class="outer" cx="268" cy="294" r="28" fill="#92400E" opacity="0.22"/>
+          <circle cx="268" cy="294" r="19" fill="#92400E" stroke="#451A03" stroke-width="2.5"/>
+          <text x="268" y="301" font-size="16" text-anchor="middle">🏆</text>
+        </g>
+        <text id="label-4" x="268" y="320" fill="#7C2D12" font-size="6" text-anchor="middle"
+              font-family="sans-serif" font-weight="bold" opacity="0">Lommerzheim</text>
+
+        <!-- ── FOG OF WAR ── -->
+        <defs>
+          <radialGradient id="fogGrad" cx="15%" cy="18%" r="92%">
+            <stop offset="0%"   stop-color="#ddf0f8" stop-opacity="0"/>
+            <stop offset="45%"  stop-color="#aed6e8" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#6db2ce" stop-opacity="0.88"/>
+          </radialGradient>
+        </defs>
+        <rect id="fog" x="0" y="0" width="360" height="560"
+              fill="url(#fogGrad)" pointer-events="none" opacity="0.6"
+              style="transition: opacity 1.2s ease;"/>
+
+      </svg>
+    </div>
+
+    <!-- INFO PANEL -->
+    <div class="info-panel w-full max-w-md mx-auto flex-shrink-0">
+      <p id="panel-eyebrow" class="font-sans text-amber-600 text-[10px] mb-1">Aktueller Status:</p>
+      <h2 id="panel-title"  class="text-amber-900 text-sm mb-1 leading-snug pixel-font">Bereit!</h2>
+      <p id="panel-sub"     class="font-sans text-amber-700 text-xs italic mb-2">Ehrenfeld – Startpunkt</p>
+      <p id="panel-desc"    class="font-sans text-amber-800 text-xs leading-relaxed mb-4">
+        Eure Tour beginnt hier. Schließe das Mini-Spiel ab, um loszuziehen!
+      </p>
+      <div id="action-panel" class="flex flex-col gap-2"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ──────────────────────────────────────────────
+//  CONSTANTS
+// ──────────────────────────────────────────────
+const STORAGE_KEY = 'brauhaus_progress_v1';
+
+const DIALOGUE = [
+  "Hallo Nadine! Alles Gute zum Geburtstag! 🎉",
+  "Wir haben eine Überraschung für dich ausgedacht...",
+  "Wir nehmen dich mit auf eine Brauhaus-Tour durch Köln! 🍺",
+  "Von Ehrenfeld bis nach Deutz – quer durch die ganze Stadt!",
+  "Und damit du dich nicht verläufst, haben wir eine magische Karte gebraut.",
+  "Klick auf 'Zur Karte!' um das Abenteuer zu starten!"
+];
+
+// Reveal what each step shows on the map
+const REVEAL_MAP = {
+  0: { segs:[], mids:[], stations:[], labels:[] },
+  1: { segs:['seg-a'],   mids:['mid-1'],  stations:[],           labels:[] },
+  2: { segs:['seg-b'],   mids:[],         stations:['station-1'],labels:['label-1'] },
+  3: { segs:['seg-c'],   mids:['mid-2'],  stations:[],           labels:[] },
+  4: { segs:['seg-d'],   mids:[],         stations:['station-2'],labels:['label-2'] },
+  5: { segs:['seg-e'],   mids:['mid-3'],  stations:[],           labels:[] },
+  6: { segs:['seg-f'],   mids:[],         stations:['station-3'],labels:['label-3'] },
+  7: { segs:['seg-g'],   mids:['mid-4'],  stations:[],           labels:[] },
+  8: { segs:['seg-h'],   mids:[],         stations:['station-4'],labels:['label-4'] },
+};
+
+const STEP_INFO = {
+  0: {
+    eyebrow:'Startpunkt:', title:'Zuhause in Ehrenfeld',
+    sub:'📍 Ehrenfeld',
+    desc:'Eure Tour beginnt hier zuhause. Schließe das erste Mini-Spiel ab, um aufzubrechen!',
+    btn:{ label:'🎮 Start-Spiel absolvieren', next:1 }
+  },
+  1: {
+    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
+    sub:'⚡ Unterwegs nach Haus Scholzen',
+    desc:'Auf halbem Weg wartet ein Straßen-Ereignis in Ehrenfeld. Bestehe die Herausforderung!',
+    btn:{ label:'⚡ Straßen-Event lösen', next:2 }
+  },
+  2: {
+    eyebrow:'Station 1:', title:'Haus Scholzen',
+    sub:'🏠 Ehrenfeld',
+    desc:'Angekommen! Haus Scholzen – das urige Starter-Brauhaus. Zeit für ein Kölsch. Bestehe das Brauhaus-Spiel!',
+    btn:{ label:'🎮 Haus Scholzen Spiel', next:3 }
+  },
+  3: {
+    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
+    sub:'⚡ Unterwegs nach Päffgen',
+    desc:'Weiter in die Innenstadt – Richtung Friesenviertel! Ein Straßen-Abenteuer wartet.',
+    btn:{ label:'⚡ Straßen-Event lösen', next:4 }
+  },
+  4: {
+    eyebrow:'Station 2:', title:'Päffgen Brauhaus',
+    sub:'🍻 Friesenviertel',
+    desc:'Traditionell und urig – das Päffgen ist Kölsch pur. Zeig was du kannst!',
+    btn:{ label:'🎮 Päffgen Spiel', next:5 }
+  },
+  5: {
+    eyebrow:'Auf dem Weg...', title:'Straßen-Event!',
+    sub:'⚡ Durch die Altstadt',
+    desc:'Weiter durch die Altstadt Richtung Walfisch. Noch ein Event auf dem Weg!',
+    btn:{ label:'⚡ Straßen-Event lösen', next:6 }
+  },
+  6: {
+    eyebrow:'Station 3:', title:'Sünner im Walfisch',
+    sub:'🐳 Altstadt (linksrheinisch)',
+    desc:'Ein historisches Brauhaus direkt in der Kölner Altstadt – linke Rheinseite. Sünner-Kölsch – legendär!',
+    btn:{ label:'🎮 Walfisch Spiel', next:7 }
+  },
+  7: {
+    eyebrow:'Brücken-Event! 🌉', title:'Ab über die Deutzer Brücke!',
+    sub:'🌉 Rheinüberquerung',
+    desc:'Jetzt geht es rüber auf die rechtsrheinische Seite! Meistere das Brücken-Event, um nach Deutz zu kommen.',
+    btn:{ label:'🌉 Brücken-Event lösen', next:8 }
+  },
+  8: {
+    eyebrow:'🏆 ZIEL ERREICHT!', title:'Lommerzheim',
+    sub:'🏆 Deutz (rechtsrheinisch) – Finale Station',
+    desc:'IHR HABT ES GESCHAFFT! Lommerzheim – die kölsche Institution auf der rechten Rheinseite. Prost auf Nadines Geburtstag! 🎉🍺',
+    btn:null
+  },
+};
+
+// ──────────────────────────────────────────────
+//  SCENE SYSTEM
+// ──────────────────────────────────────────────
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.add('scene-hidden'));
+  document.getElementById(id).classList.remove('scene-hidden');
+}
+
+// ──────────────────────────────────────────────
+//  MENU
+// ──────────────────────────────────────────────
+const menuBtn     = document.getElementById('menu-btn');
+const menuOverlay = document.getElementById('menu-overlay');
+
+function showMenu(show) {
+  if (show) menuBtn.classList.add('visible');
+  else      menuBtn.classList.remove('visible');
+}
+
+menuBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  menuOverlay.classList.toggle('open');
+});
+menuOverlay.addEventListener('click', e => {
+  if (e.target === menuOverlay) menuOverlay.classList.remove('open');
+});
+
+function jumpToStation(step) {
+  menuOverlay.classList.remove('open');
+  showScene('scene-map');
+  initMap(step);
+}
+
+function resetProgress() {
+  menuOverlay.classList.remove('open');
+  localStorage.removeItem(STORAGE_KEY);
+  jumpToStation(0);
+}
+
+// ──────────────────────────────────────────────
+//  SCENE 1 · WELCOME
+// ──────────────────────────────────────────────
+const nameInput = document.getElementById('name-input');
+const errorMsg  = document.getElementById('error-msg');
+
+function checkName() {
+  const v = nameInput.value.trim().toLowerCase();
+  if (v === 'nadine') {
+    errorMsg.classList.add('hidden');
+    showMenu(true);
+
+    // Check for saved progress → skip to map
+    const saved = loadProgress();
+    if (saved > 0) {
+      showScene('scene-map');
+      initMap(saved);
+    } else {
+      showScene('scene-intro');
+      startDialogue();
+    }
+  } else {
+    errorMsg.classList.remove('hidden');
+    nameInput.classList.add('error-shake');
+    setTimeout(() => nameInput.classList.remove('error-shake'), 400);
+  }
+}
+document.getElementById('confirm-btn').addEventListener('click', checkName);
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkName(); });
+
+// ──────────────────────────────────────────────
+//  SCENE 2 · INTRO DIALOGUE
+// ──────────────────────────────────────────────
+const dialogueTextEl   = document.getElementById('dialogue-text');
+const continuePromptEl = document.getElementById('continue-prompt');
+const toLoadingBtn     = document.getElementById('to-loading-btn');
+const nadineCard       = document.getElementById('nadine-card');
+const dialogueBox      = document.getElementById('dialogue-box');
+
+let dlLine = 0, isTyping = false, typeTimer = null;
+let audioCtx = null;
+
+function chirp() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.value = 680 + Math.random() * 300;
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.065);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.065);
+  } catch(e) {}
+}
+
+function typeLine(text) {
+  isTyping = true;
+  dialogueTextEl.textContent = '';
+  continuePromptEl.classList.add('hidden');
+  toLoadingBtn.classList.add('hidden');
+  let i = 0;
+  typeTimer = setInterval(() => {
+    dialogueTextEl.textContent += text[i];
+    if (text[i] && text[i].trim()) chirp();
+    i++;
+    if (i >= text.length) {
+      clearInterval(typeTimer); isTyping = false;
+      if (dlLine < DIALOGUE.length - 1) {
+        continuePromptEl.classList.remove('hidden');
       } else {
-        errorMsg.classList.remove('hidden');
-        nameInput.classList.add('error-shake');
-        setTimeout(() => nameInput.classList.remove('error-shake'), 400);
+        toLoadingBtn.classList.remove('hidden');
       }
     }
+  }, 42);
+}
 
-    confirmBtn.addEventListener('click', checkName);
-    nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') checkName();
-    });
+function advanceDialogue() {
+  if (isTyping) {
+    clearInterval(typeTimer);
+    dialogueTextEl.textContent = DIALOGUE[dlLine];
+    isTyping = false;
+    if (dlLine < DIALOGUE.length - 1) continuePromptEl.classList.remove('hidden');
+    else toLoadingBtn.classList.remove('hidden');
+    return;
+  }
+  dlLine++;
+  if (dlLine >= DIALOGUE.length) return;
+  typeLine(DIALOGUE[dlLine]);
+}
 
-    // ============ SCENE 2: INTRO DIALOGUE ============
-    const dialogueLines = [
-      "Hallo Nadine! Bereit für deinen Geburtstag?",
-      "Wir haben uns etwas ganz Besonderes für dich überlegt!",
-      "Wir nehmen dich mit auf eine Brauhaus-Tour durch Köln!",
-      "Und damit du dich nicht verläufst, haben wir eine Karte für dich.",
-      "Klick auf 'Weiter', um die Karte zu sehen!"
-    ];
+function startDialogue() {
+  setTimeout(() => nadineCard.classList.add('nadine-slide-in'), 350);
+  dlLine = 0;
+  typeLine(DIALOGUE[0]);
+}
 
-    const dialogueTextEl = document.getElementById('dialogue-text');
-    const continuePrompt = document.getElementById('continue-prompt');
-    const toMapBtn = document.getElementById('to-map-btn');
-    const nadineCard = document.getElementById('nadine-card');
+dialogueBox.addEventListener('click', e => {
+  if (e.target === toLoadingBtn) return;
+  if (!toLoadingBtn.classList.contains('hidden')) return;
+  advanceDialogue();
+});
 
-    let currentLine = 0;
-    let isTyping = false;
-    let typeInterval = null;
+toLoadingBtn.addEventListener('click', () => {
+  showScene('scene-loading');
+  startLoading();
+});
 
-    // Simple chirpy "Animal Crossing" style beep using Web Audio API
-    let audioCtx = null;
-    function playBeep() {
-      try {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+// ──────────────────────────────────────────────
+//  SCENE 2.5 · CAULDRON LOADING
+// ──────────────────────────────────────────────
+const INGREDIENTS    = document.querySelectorAll('.ingredient');
+const loadingBarFill = document.getElementById('loading-bar-fill');
+const loadingPct     = document.getElementById('loading-pct');
+const TOTAL_MS       = 7000;
+const DROP_AT        = [0.12, 0.28, 0.46, 0.64, 0.82];
 
-        osc.type = 'square';
-        const basePitch = 700;
-        osc.frequency.value = basePitch + Math.random() * 250;
+function startLoading() {
+  INGREDIENTS.forEach(el => { el.className = 'ingredient'; });
+  loadingBarFill.style.width = '0%';
+  loadingPct.textContent = '0%';
+  const t0 = performance.now();
+  let dropped = 0;
 
-        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+  function tick(now) {
+    const pct = Math.min((now - t0) / TOTAL_MS, 1);
+    loadingBarFill.style.width = (pct * 100).toFixed(1) + '%';
+    loadingPct.textContent = Math.floor(pct * 100) + '%';
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.06);
-      } catch (e) {
-        // Audio not available; fail silently
-      }
+    while (dropped < DROP_AT.length && pct >= DROP_AT[dropped]) {
+      INGREDIENTS[dropped].classList.add('dropping');
+      if (dropped > 0) INGREDIENTS[dropped - 1].classList.add('dropped');
+      dropped++;
     }
 
-    function typeLine(text, onComplete) {
-      isTyping = true;
-      dialogueTextEl.textContent = '';
-      continuePrompt.classList.add('hidden');
-      let i = 0;
-
-      typeInterval = setInterval(() => {
-        const char = text[i];
-        dialogueTextEl.textContent += char;
-
-        if (char && char.trim() !== '') {
-          playBeep();
-        }
-
-        i++;
-        if (i >= text.length) {
-          clearInterval(typeInterval);
-          isTyping = false;
-          continuePrompt.classList.remove('hidden');
-          if (onComplete) onComplete();
-        }
-      }, 45);
+    if (pct < 1) { requestAnimationFrame(tick); }
+    else {
+      INGREDIENTS[INGREDIENTS.length - 1]?.classList.add('dropped');
+      setTimeout(() => { showScene('scene-map'); initMap(0); }, 400);
     }
+  }
+  requestAnimationFrame(tick);
+}
 
-    function showNextLine() {
-      if (isTyping) {
-        clearInterval(typeInterval);
-        dialogueTextEl.textContent = dialogueLines[currentLine];
-        isTyping = false;
-        continuePrompt.classList.remove('hidden');
-        return;
-      }
+// ──────────────────────────────────────────────
+//  PERSISTENCE
+// ──────────────────────────────────────────────
+function saveProgress(step) {
+  try { localStorage.setItem(STORAGE_KEY, String(step)); } catch(e) {}
+}
+function loadProgress() {
+  try { return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+}
 
-      currentLine++;
+// ──────────────────────────────────────────────
+//  SCENE 3 · MAP
+// ──────────────────────────────────────────────
+let progressStep = 0;
 
-      if (currentLine >= dialogueLines.length) {
-        continuePrompt.classList.add('hidden');
-        toMapBtn.classList.remove('hidden');
-        return;
-      }
+function applyReveal(step) {
+  const r = REVEAL_MAP[step] || {};
+  (r.segs     || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
+  (r.mids     || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
+  (r.stations || []).forEach(id => document.getElementById(id)?.classList.add('visible'));
+  (r.labels   || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('opacity', '1');
+  });
+}
 
-      typeLine(dialogueLines[currentLine]);
-    }
+function updateInfoPanel(step) {
+  const info = STEP_INFO[step];
+  if (!info) return;
+  document.getElementById('panel-eyebrow').textContent = info.eyebrow;
+  document.getElementById('panel-title').textContent   = info.title;
+  document.getElementById('panel-sub').textContent     = info.sub;
+  document.getElementById('panel-desc').textContent    = info.desc;
 
-    function startDialogue() {
-      setTimeout(() => {
-        nadineCard.classList.remove('opacity-0');
-        nadineCard.classList.add('nadine-enter');
-      }, 300);
+  const ap = document.getElementById('action-panel');
+  ap.innerHTML = '';
 
-      currentLine = 0;
-      typeLine(dialogueLines[0]);
-    }
+  if (info.btn) {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.textContent = info.btn.label;
+    btn.addEventListener('click', () => advanceStep(info.btn.next));
+    ap.appendChild(btn);
+  } else {
+    const p = document.createElement('p');
+    p.className = 'pixel-font text-amber-700 text-[10px] text-center mt-2 leading-loose';
+    p.textContent = '🍺 Prost Nadine! 🍺';
+    ap.appendChild(p);
+  }
+}
 
-    document.querySelector('.dialogue-box').addEventListener('click', (e) => {
-      if (e.target === toMapBtn) return;
-      if (!toMapBtn.classList.contains('hidden')) return;
-      showNextLine();
-    });
+function advanceStep(targetStep) {
+  for (let s = progressStep + 1; s <= targetStep; s++) applyReveal(s);
+  progressStep = targetStep;
+  saveProgress(progressStep);
+  updateInfoPanel(progressStep);
 
-    toMapBtn.addEventListener('click', () => {
-      sceneIntro.classList.add('scene-hidden');
-      sceneMap.classList.remove('scene-hidden');
-    });
+  const fog = document.getElementById('fog');
+  if (fog) fog.style.opacity = Math.max(0, 0.6 - progressStep * 0.065);
+}
 
-    // ============ SCENE 3: MAP ============
-    const breweryData = {
-      "1": {
-        eyebrow: "Deine nächste Station:",
-        title: "Haus Scholzen",
-        subtitle: "Ehrenfeld",
-        desc: "Ein urig-gemütliches Brauhaus mit langer Geschichte. Hier startet eure Tour. (Mini-Spiel folgt bald!)"
-      },
-      "2": {
-        eyebrow: "Station 2:",
-        title: "Braustelle",
-        subtitle: "Kölns kleinste Brauerei",
-        desc: "Winzig, aber legendär – hier wird das Bier direkt vor Ort gebraut. (Mini-Spiel folgt bald!)"
-      },
-      "3": {
-        eyebrow: "Station 3:",
-        title: "Päffgen Brauhaus",
-        subtitle: "Traditionell und urig",
-        desc: "Klassisches Kölsch in historischem Ambiente, Friesenstraße. (Mini-Spiel folgt bald!)"
-      },
-      "4": {
-        eyebrow: "Station 4:",
-        title: "Lommerzheim",
-        subtitle: "Deutz",
-        desc: "Ikonische Fassade, kölsche Institution – euer großes Finale! (Mini-Spiel folgt bald!)"
-      }
-    };
+function initMap(fromStep = 0) {
+  // Reset visual state
+  document.querySelectorAll('.path-seg, .mid-event, .station-marker')
+    .forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('[id^="label-"]')
+    .forEach(el => el.setAttribute('opacity', '0'));
 
-    const panelEyebrow = document.getElementById('panel-eyebrow');
-    const panelTitle = document.getElementById('panel-title');
-    const panelSubtitle = document.getElementById('panel-subtitle');
-    const panelDesc = document.getElementById('panel-desc');
+  const fog = document.getElementById('fog');
 
-    document.querySelectorAll('.station-dot').forEach((station) => {
-      station.addEventListener('click', () => {
-        const stationNumber = station.getAttribute('data-station');
-        const data = breweryData[stationNumber];
+  progressStep = 0;
 
-        document.querySelectorAll('.station-dot').forEach(s => s.classList.remove('selected'));
-        station.classList.add('selected');
+  if (fromStep > 0) {
+    // Reveal everything up to fromStep instantly (no animation delay)
+    for (let s = 1; s <= fromStep; s++) applyReveal(s);
+    progressStep = fromStep;
+    if (fog) fog.style.opacity = Math.max(0, 0.6 - fromStep * 0.065);
+  } else {
+    if (fog) fog.style.opacity = '0.6';
+  }
 
-        panelEyebrow.textContent = data.eyebrow;
-        panelTitle.textContent = data.title;
-        panelSubtitle.textContent = data.subtitle;
-        panelDesc.textContent = data.desc;
+  updateInfoPanel(progressStep);
+}
 
-        // Placeholder: mini-game logic for each station will be added here
-        console.log(`Station ${stationNumber} clicked: ${data.title}`);
-      });
-    });
-  </script>
-
+</script>
 </body>
 </html>
