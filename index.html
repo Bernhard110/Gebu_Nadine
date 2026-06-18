@@ -256,6 +256,75 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
 }
 .big-nae-btn:active { transform:translate(6px,6px); box-shadow:none; }
 .smash-count { font-family:'Press Start 2P',monospace; font-size:28px; color:#fde68a; }
+
+/* ── GLÜCKSRAD (Fortune Wheel) ── */
+#scene-wheel {
+  background:linear-gradient(135deg,#1a0a00 0%,#2d1200 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:20px; gap:14px; overflow:hidden;
+}
+.wheel-container { position:relative; width:min(300px,82vw); height:min(300px,82vw); flex-shrink:0; }
+#wheel-canvas { border-radius:50%; box-shadow:0 0 24px rgba(217,119,6,.5); }
+.wheel-pointer {
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+  width:0; height:0;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-top:28px solid #DC2626;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  z-index:10;
+}
+#spin-btn {
+  font-family:'Press Start 2P',monospace; font-size:clamp(11px,3vw,14px);
+  background:#D97706; color:#fff; border:none; border-radius:10px;
+  box-shadow:5px 5px 0 #92400E; padding:14px 32px; cursor:pointer;
+  transition:transform .08s,box-shadow .08s; min-height:52px;
+}
+#spin-btn:active { transform:translate(5px,5px); box-shadow:none; }
+#spin-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:5px 5px 0 #92400E; }
+
+/* ── REVEAL OVERLAY (used after road events to announce destination) ── */
+#reveal-overlay {
+  position:fixed; inset:0; z-index:8889; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.8); opacity:0; pointer-events:none; transition:opacity .4s; padding:24px;
+}
+#reveal-overlay.show { opacity:1; pointer-events:all; }
+.reveal-card {
+  background:#fffaf0; border:5px solid #D97706; border-radius:20px;
+  max-width:380px; width:100%; padding:24px 20px; text-align:center;
+  box-shadow:0 0 40px rgba(217,119,6,.4); display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.reveal-icon { font-size:48px; }
+.reveal-text { font-family:sans-serif; font-size:13px; color:#78350F; line-height:1.75; }
+.reveal-text strong { font-family:'Press Start 2P',monospace; font-size:11px; color:#D97706; }
+.reveal-tap { font-family:'Press Start 2P',monospace; font-size:8px; color:#92400E;
+  animation:bob 1s ease-in-out infinite; display:inline-block; margin-top:4px; }
+
+/* ── MIC WAVE ANIMATION ── */
+.mic-wrap { display:flex; align-items:flex-end; gap:4px; height:50px; }
+.mic-bar {
+  width:6px; background:#D97706; border-radius:3px;
+  animation:wave var(--spd) ease-in-out infinite alternate;
+  animation-delay:var(--dly);
+}
+@keyframes wave { from{height:6px} to{height:var(--h)} }
+
+/* ── STAR RATING ── */
+.star-row { display:flex; gap:8px; justify-content:center; }
+.star-btn {
+  font-size:36px; background:none; border:none; cursor:pointer;
+  transition:transform .15s; padding:4px;
+}
+.star-btn:active { transform:scale(1.3); }
+.star-btn.lit { filter:drop-shadow(0 0 6px gold); }
+
+/* ── TEXT INPUT for road events ── */
+.road-input {
+  background:#1a0a00; border:2px solid #D97706; color:#fde68a;
+  font-family:sans-serif; font-size:14px; padding:12px 14px; border-radius:8px;
+  width:100%; resize:none; line-height:1.6;
+}
+.road-input:focus { outline:none; box-shadow:0 0 0 3px rgba(217,119,6,.3); }
 </style>
 </head>
 <body class="pf">
@@ -268,10 +337,10 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
 <div id="menu-overlay">
   <div class="menu-panel">
     <p class="menu-title">⚡ Schnellreise</p>
-    <button class="menu-item" onclick="menuJump(2)">Station 1</button>
-    <button class="menu-item" onclick="menuJump(4)">Station 2</button>
-    <button class="menu-item" onclick="menuJump(6)">Station 3</button>
-    <button class="menu-item" onclick="menuJump(8)">Station 4</button>
+    <button class="menu-item" onclick="menuJump(0)">Station 1</button>
+    <button class="menu-item" onclick="menuJump(2)">Station 2</button>
+    <button class="menu-item" onclick="menuJump(4)">Station 3</button>
+    <button class="menu-item" onclick="menuJump(6)">Station 4</button>
     <button class="menu-item danger" onclick="menuReset()">🗑 Zurücksetzen</button>
   </div>
 </div>
@@ -364,6 +433,27 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
     <div class="bierdeckel-icon">🍺</div>
     <p class="bierdeckel-text">Exakt! Ehrenfeld ist unser Startpunkt. Und die älteste Traditions-Adresse dort wartet auf uns. Schuhe an, wir gehen los zum Haus Scholzen!</p>
     <span class="bierdeckel-tap">▼ Tippen zum Weitermachen</span>
+  </div>
+</div>
+
+<!-- ══ SCENE 2.9: GLÜCKSRAD ══ -->
+<section id="scene-wheel" class="scene scene-hidden">
+  <p class="pf" style="color:#fde68a;font-size:clamp(10px,3vw,13px);text-align:center;line-height:1.8">🍀 Das Kölsch-Glücksrad</p>
+  <p class="pf" style="color:#92400E;font-size:8px;text-align:center;line-height:1.8">Was wird euer Wegbier?</p>
+  <div class="wheel-container">
+    <div class="wheel-pointer"></div>
+    <canvas id="wheel-canvas" width="300" height="300"></canvas>
+  </div>
+  <button id="spin-btn">🎰 Drehen!</button>
+  <p id="wheel-result" class="pf" style="color:#fde68a;font-size:10px;text-align:center;line-height:1.8;min-height:1.5em"></p>
+</section>
+
+<!-- ══ REVEAL OVERLAY (destination announcer) ══ -->
+<div id="reveal-overlay">
+  <div class="reveal-card">
+    <div class="reveal-icon" id="reveal-icon">🎯</div>
+    <p class="reveal-text" id="reveal-text"></p>
+    <button class="btn btn-amber pf" style="padding:12px 24px;font-size:10px;width:100%" id="reveal-btn">Weiter! →</button>
   </div>
 </div>
 
@@ -465,10 +555,10 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
         <path id="seg-d" class="path-seg" d="M 133 270 C 137 283 143 295 148 305 C 152 312 155 317 157 322"/>
         <!-- seg-e: mid-2 → Station 3 (Sünner im Walfisch ~x=162,y=252, near Dom, LEFT bank) -->
         <path id="seg-e" class="path-seg" d="M 157 322 C 159 315 160 305 161 295 C 162 283 162 270 162 258 C 162 254 162 253 162 252"/>
-        <!-- seg-f: Station 3 → mid-3 (Hohenzollernbrücke crossing ~x=192,y=218) -->
-        <path id="seg-f" class="path-seg" d="M 162 252 C 163 244 164 236 167 228 C 170 222 176 217 185 215 C 190 214 194 215 198 216"/>
-        <!-- seg-g: mid-3 (bridge event) → Station 4 (Lommerzheim ~x=265,y=257, RIGHT bank Deutz) -->
-        <path id="seg-g" class="path-seg" d="M 198 216 C 210 215 222 230 235 240 C 246 248 256 253 265 257"/>
+        <!-- seg-f: Station 3 → mid-3 (heading south to Deutzer Brücke ~y=326) -->
+        <path id="seg-f" class="path-seg" d="M 162 252 C 162 268 162 284 163 300 C 164 310 166 318 171 326"/>
+        <!-- seg-g: mid-3 (Deutzer Brücke bridge event) → Station 4 (Lommerzheim ~x=265,y=257, RIGHT bank) -->
+        <path id="seg-g" class="path-seg" d="M 213 326 C 226 322 240 308 250 294 C 257 283 262 270 265 257"/>
 
         <!-- ══ MID-EVENT MARKERS ══ -->
         <!-- mid-1: road event between S1 and S2 -->
@@ -481,10 +571,10 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
           <circle cx="157" cy="322" r="13" fill="#7C3AED" stroke="#4C1D95" stroke-width="2.5"/>
           <text x="157" y="327" font-size="12" text-anchor="middle">⚡</text>
         </g>
-        <!-- mid-3: BRIDGE EVENT on Hohenzollernbrücke -->
+        <!-- mid-3: BRIDGE EVENT on Deutzer Brücke (x=192,y=326) -->
         <g id="mid-3" class="mid-evt" data-mid="3">
-          <circle cx="192" cy="216" r="15" fill="#B45309" stroke="#7C2D12" stroke-width="2.5"/>
-          <text x="192" y="222" font-size="13" text-anchor="middle">🌉</text>
+          <circle cx="192" cy="326" r="15" fill="#B45309" stroke="#7C2D12" stroke-width="2.5"/>
+          <text x="192" y="332" font-size="13" text-anchor="middle">🌉</text>
         </g>
 
         <!-- ══ STATIONS ══ -->
@@ -557,9 +647,9 @@ const STORAGE_KEY = 'brauhaus_v2';
 
 const DIALOGUE = [
   "Hallo Nadine! Alles Gute zum Geburtstag! 🎉",
-  "Wir haben eine Überraschung für dich ausgedacht...",
+  "Wir haben uns eine Überraschung für dich ausgedacht...",
   "Wir nehmen dich mit auf eine Brauhaus-Tour durch Köln! 🍺",
-  "Von Ehrenfeld bis nach Deutz – quer durch die ganze Stadt!",
+  "Quer durch die ganze Stadt – von West nach Ost!",
   "Und damit du dich nicht verläufst, haben wir eine magische Karte gebraut.",
   "Klick auf 'Zur Karte!' um das Abenteuer zu starten!"
 ];
@@ -587,21 +677,21 @@ const STEP_INFO = {
   0: { eye:'Station 1:', title:'Haus Scholzen', sub:'🏠 Ehrenfeld',
     desc:'Angekommen! Das Abenteuer beginnt. Starte den Zeitreise-Scanner!',
     action: () => openMG('zeitreise') },
-  1: { eye:'Auf dem Weg...', title:'Straßen-Event!', sub:'⚡ Richtung Päffgen',
-    desc:'Ein Ereignis auf dem Weg. Klick um weiterzugehen!',
-    action: () => { advanceStep(2); closeMG(); } },
+  1: { eye:'Auf dem Weg...', title:'Büdchen-Detektiv!', sub:'⚡ Richtung Päffgen',
+    desc:'Ein Kiosk wartet auf euch. Löst den Büdchen-Auftrag!',
+    action: () => openMG('buedchen') },
   2: { eye:'Station 2:', title:'Päffgen Brauhaus', sub:'🍻 Friesenviertel',
     desc:'Traditionell und urig! Das Pferdefuhrwerk-Spiel wartet.',
     action: () => openMG('horse') },
-  3: { eye:'Auf dem Weg...', title:'Straßen-Event!', sub:'⚡ Richtung Altstadt',
-    desc:'Noch ein Ereignis auf dem Weg. Klick um weiterzugehen!',
-    action: () => { advanceStep(4); closeMG(); } },
+  3: { eye:'Auf dem Weg...', title:'Kölsch-Preisschätzer!', sub:'⚡ Richtung Altstadt',
+    desc:'Büdchen-Wissenschaft! Schätzt die Preise!',
+    action: () => openMG('preisschaetzer') },
   4: { eye:'Station 3:', title:'Sünner im Walfisch', sub:'🐳 Altstadt (linksrheinisch)',
     desc:'Historisches Brauhaus direkt neben dem Dom. Der Kölsch-Kompass wartet!',
     action: () => openMG('compass') },
-  5: { eye:'Brücken-Event! 🌉', title:'Hohenzollernbrücke!', sub:'🌉 Rheinüberquerung',
-    desc:'Rüber auf die rechte Seite! Klick um die Brücke zu überqueren.',
-    action: () => { advanceStep(6); closeMG(); } },
+  5: { eye:'Brücken-Event! 🌉', title:'Büdchen-Zungenbrecher!', sub:'🌉 Auf zur Deutzer Brücke',
+    desc:'Bevor ihr die Brücke überquert – ein letzter Büdchen-Stop!',
+    action: () => openMG('zungenbrecher') },
   6: { eye:'🏆 ZIEL ERREICHT!', title:'Lommerzheim', sub:'🏆 Deutz (rechtsrheinisch)',
     desc:'IHR HABT ES GESCHAFFT! Prost auf Nadines Geburtstag! 🎉🍺',
     action: null },
@@ -820,8 +910,8 @@ qs('check-btn').addEventListener('click', () => {
 
 qs('bierdeckel-card').addEventListener('click', () => {
   qs('bierdeckel-overlay').classList.remove('show');
-  showScene('scene-map');
-  initMap(0); // step 0 = S1 already revealed
+  showScene('scene-wheel');
+  initWheel();
 });
 
 // ═══════════════════════════════════════════════
@@ -845,7 +935,7 @@ function updatePanel(step) {
   qs('panel-desc').textContent  = info.desc;
   const ap = qs('action-panel'); ap.innerHTML='';
   if (info.action) {
-    const lbl = step===1||step===3||step===5 ? '⚡ Weiter!' : '🎮 Spiel starten!';
+    const lbl = '🎮 Los geht\'s!';
     const btn = document.createElement('button');
     btn.className='action-btn'; btn.textContent=lbl;
     btn.addEventListener('click', info.action);
@@ -887,10 +977,14 @@ function closeMG() { mgOv.classList.remove('open'); mgBox.innerHTML=''; }
 
 function buildMG(type) {
   mgBox.innerHTML='';
-  if (type==='zeitreise') buildZeitreise();
-  else if (type==='horse')   buildHorse();
-  else if (type==='compass') buildCompass();
+  if (type==='zeitreise')      buildZeitreise();
+  else if (type==='horse')     buildHorse();
+  else if (type==='compass')   buildCompass();
   else if (type==='tuersteher') buildTuersteher();
+  else if (type==='buedchen')  buildBuedchen();
+  else if (type==='preisschaetzer') buildPreisschaetzer();
+  else if (type==='zungenbrecher')  buildZungenbrecher();
+  else if (type==='clinton')   buildClinton();
 }
 
 // ── MG 1: ZEITREISE SCANNER (Station 1) ──
@@ -898,18 +992,28 @@ function buildZeitreise() {
   mgBox.innerHTML=`
     <p class="mg-title">🕰️ Zeitreise-Scanner</p>
     <p class="mg-subtitle">Haus Scholzen</p>
-    <p class="mg-body" style="font-size:12px;color:#d4a574">Scanne den geheimen Code am Eingang!<br><br>
-    (Gib irgendetwas ein und bestätige 😄)</p>
-    <input id="scan-in" class="scan-input" type="text" placeholder="Scan-Code eingeben..." autocomplete="off">
+    <p class="mg-body" style="font-size:11px;color:#d4a574;line-height:1.8;text-align:left">
+      In welchem Jahr feierte das „Haus Scholzen" 111 Jahre als Familienbetrieb an der Venloer Straße in Ehrenfeld?
+    </p>
+    <input id="scan-in" class="scan-input" type="number" inputmode="numeric" placeholder="Jahreszahl eingeben..." autocomplete="off" style="font-size:16px">
     <button class="btn btn-green pf" style="padding:12px 20px;font-size:10px;width:100%" id="scan-btn">
-      Scanner aktivieren ✓
+      Bestätigen ✓
     </button>
-    <p id="scan-err" class="pf" style="color:#f87171;font-size:9px;display:none">Bitte etwas eingeben!</p>
+    <p id="scan-err" class="pf" style="color:#f87171;font-size:9px;line-height:1.8;display:none;text-align:center">
+      Nicht ganz! Recherchier nochmal... 🤔
+    </p>
   `;
   qs('scan-btn').addEventListener('click', ()=>{
-    if (!qs('scan-in').value.trim()) { qs('scan-err').style.display='block'; return; }
-    closeMG();
-    advanceStep(1);
+    const val = qs('scan-in').value.trim();
+    if (val === '2018') {
+      qs('scan-err').style.display = 'none';
+      closeMG();
+      advanceStep(1);
+    } else {
+      qs('scan-err').style.display = 'block';
+      qs('scan-in').classList.add('shake');
+      setTimeout(() => qs('scan-in').classList.remove('shake'), 400);
+    }
   });
   qs('scan-in').addEventListener('keydown', e=>{ if(e.key==='Enter') qs('scan-btn').click(); });
 }
@@ -979,12 +1083,14 @@ function runHorseGame() {
     // Road
     ctx.fillStyle='#a0784a'; ctx.fillRect(0,H-40,W,20);
 
-    // Player (table shield)
+    // Player (table shield) - folded table against wall
     ctx.fillStyle='#059669';
     ctx.fillRect(30, playerY-20, 18, 40);
-    ctx.fillStyle='#4ade80';
-    ctx.font='22px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('🪑', 38, playerY+8);
+    ctx.fillStyle='#92400E';
+    ctx.fillRect(18, playerY-22, 28, 6);
+    ctx.fillStyle='#7C2D12';
+    ctx.fillRect(21, playerY-16, 4, 18);
+    ctx.fillRect(37, playerY-16, 4, 18);
 
     // Obstacles
     obstacles.forEach(o=>{
@@ -1032,20 +1138,35 @@ function buildCompass() {
   mgBox.innerHTML=`
     <p class="mg-title">🧭 Der Kölsch-Kompass</p>
     <p class="mg-subtitle">Sünner im Walfisch</p>
-    <p class="mg-body" style="font-size:11px;color:#d4a574">Drehe die Nadel nach Osten (rechts)<br>um Deutz über den Rhein zu finden!<br><br>Drehe/ziehe die Kompass-Nadel.</p>
-    <div id="compass-wrap" style="position:relative;width:220px;height:220px;flex-shrink:0">
-      <svg id="compass-svg" viewBox="0 0 220 220" style="width:220px;height:220px;cursor:grab" xmlns="http://www.w3.org/2000/svg">
-        <!-- Compass rose -->
+    <div style="background:#0f0800;border:2px solid #92400E;border-radius:10px;padding:12px 14px;width:100%">
+      <p class="pf" style="color:#D97706;font-size:7px;margin:0 0 6px;text-align:center">🔮 Das Rätsel</p>
+      <p style="font-family:sans-serif;font-size:11px;color:#fde68a;line-height:1.75;font-style:italic;margin:0">
+        „Ich bringe das Licht, bin der Jugend Symbol,<br>
+        schenkt' alten Altären der Ausrichtung Wohl.<br>
+        Im Kalten Krieg stand ich für Macht und für Block,<br>
+        und trotze am Morgen dem finstersten Schock.<br>
+        Schaust du zum Polarstern im nächtlichen Glanz,<br>
+        zeigt deine rechte Hand mich ganz."
+      </p>
+    </div>
+    <p class="pf" style="color:#92400E;font-size:8px;text-align:center;line-height:1.8">
+      Drehe die Kompassnadel!
+    </p>
+    <div id="compass-wrap" style="position:relative;width:min(220px,70vw);height:min(220px,70vw);flex-shrink:0">
+      <svg id="compass-svg" viewBox="0 0 220 220" style="width:100%;height:100%;cursor:grab;touch-action:none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="110" cy="110" r="100" fill="#1a0a00" stroke="#D97706" stroke-width="4"/>
         <circle cx="110" cy="110" r="96" fill="none" stroke="#92400E" stroke-width="1" stroke-dasharray="4 4"/>
-        <!-- Cardinal directions -->
-        <text x="110" y="24" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">N</text>
-        <text x="196" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#4ade80">O</text>
-        <text x="110" y="206" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">S</text>
-        <text x="24" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">W</text>
-        <!-- Target zone highlight (East ~90° from top) -->
-        <path d="M 110 110 L 185 90 A 80 80 0 0 1 185 130 Z" fill="#4ade80" opacity=".15"/>
-        <!-- Needle (rotatable) -->
+        <!-- Degree ticks -->
+        <line x1="110" y1="14" x2="110" y2="24" stroke="#92400E" stroke-width="2"/>
+        <line x1="206" y1="110" x2="196" y2="110" stroke="#92400E" stroke-width="2"/>
+        <line x1="110" y1="206" x2="110" y2="196" stroke="#92400E" stroke-width="2"/>
+        <line x1="14" y1="110" x2="24" y2="110" stroke="#92400E" stroke-width="2"/>
+        <!-- Cardinal directions — NO colour hint on East -->
+        <text x="110" y="26" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">N</text>
+        <text x="194" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">O</text>
+        <text x="110" y="204" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">S</text>
+        <text x="26" y="116" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="13" fill="#D97706">W</text>
+        <!-- Needle (rotatable) — starts random -->
         <g id="needle-g" style="transform-origin:110px 110px">
           <polygon points="110,30 116,110 104,110" fill="#DC2626"/>
           <polygon points="110,190 116,110 104,110" fill="#eee"/>
@@ -1053,10 +1174,7 @@ function buildCompass() {
         </g>
       </svg>
     </div>
-    <p id="compass-hint" class="pf" style="color:#92400E;font-size:8px;text-align:center;line-height:1.8">
-      Ziel: Zeige nach Osten → Deutz!
-    </p>
-    <p id="compass-ok" class="pf" style="color:#4ade80;font-size:9px;display:none">✓ Deutz gefunden! Weiter...</p>
+    <p id="compass-ok" class="pf" style="color:#4ade80;font-size:9px;display:none;text-align:center;line-height:1.8">✓ Die Richtung stimmt! Weiter...</p>
   `;
   runCompass();
 }
@@ -1064,7 +1182,7 @@ function buildCompass() {
 function runCompass() {
   const needle = qs('needle-g');
   const svg = qs('compass-svg');
-  let angle = -135; // start pointing roughly NW
+  let angle = -135;
   let dragging = false;
   let lastAngle = null;
   let solved = false;
@@ -1079,25 +1197,22 @@ function runCompass() {
   function setNeedle(a) {
     angle = a;
     needle.style.transform = `rotate(${a}deg)`;
-    // East = 90° (needle pointing right = 90° rotation from top)
-    const diff = ((a % 360) + 360) % 360;
-    const target = 90; // East
-    const dist = Math.min(Math.abs(diff-target), 360-Math.abs(diff-target));
-    if (dist < 18 && !solved) {
+    // Win: needle points East = 90° rotation from North/top
+    const norm = ((a % 360) + 360) % 360;
+    const dist = Math.min(Math.abs(norm - 90), 360 - Math.abs(norm - 90));
+    if (dist < 15 && !solved) {
       solved = true;
-      qs('compass-hint').style.display='none';
-      qs('compass-ok').style.display='block';
+      qs('compass-ok').style.display = 'block';
       setTimeout(()=>{ closeMG(); advanceStep(5); }, 1400);
     }
   }
 
-  svg.addEventListener('mousedown', e=>{ dragging=true; lastAngle=getAngle(e.clientX,e.clientY); });
+  svg.addEventListener('mousedown', e=>{ dragging=true; lastAngle=getAngle(e.clientX,e.clientY); e.preventDefault(); });
   window.addEventListener('mouseup', ()=>dragging=false);
   window.addEventListener('mousemove', e=>{
     if(!dragging||solved) return;
     const a=getAngle(e.clientX,e.clientY);
-    const delta = a - (lastAngle||a);
-    lastAngle=a;
+    const delta=a-(lastAngle||a); lastAngle=a;
     setNeedle(angle+delta);
   });
   svg.addEventListener('touchstart', e=>{ e.preventDefault(); dragging=true; const t=e.touches[0]; lastAngle=getAngle(t.clientX,t.clientY); },{passive:false});
@@ -1106,18 +1221,15 @@ function runCompass() {
     if(!dragging||solved) return;
     const t=e.touches[0];
     const a=getAngle(t.clientX,t.clientY);
-    const delta = a-(lastAngle||a); lastAngle=a;
+    const delta=a-(lastAngle||a); lastAngle=a;
     setNeedle(angle+delta);
-  });
-
-  // Device orientation support
+  },{passive:false});
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', e=>{
-      if(solved) return;
-      if(e.alpha!==null) setNeedle(-e.alpha + 90);
+      if(solved||e.alpha===null) return;
+      setNeedle(-e.alpha+90);
     });
   }
-
   setNeedle(angle);
 }
 
@@ -1147,7 +1259,6 @@ function buildTuersteher() {
 
 // ── FINALE VICTORY ──
 function showFinale() {
-  // Create a full-screen victory overlay
   const ov = document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center';
   ov.innerHTML=`
@@ -1161,25 +1272,322 @@ function showFinale() {
 }
 
 // ── CONNECT STATION CLICKS ON MAP ──
-// Station 1 - only after it's visible
 document.addEventListener('click', e=>{
   const mg = e.target.closest('[data-station]');
   if(!mg||!mg.classList.contains('vis')) return;
   const s=parseInt(mg.dataset.station);
-  if(s===1&&progressStep>=0) { /* station info shown via panel */ }
+  if(s===1&&progressStep>=0) { /* panel drives this */ }
   if(s===2&&progressStep>=2) openMG('horse');
   if(s===3&&progressStep>=4) openMG('compass');
   if(s===4&&progressStep>=6) openMG('tuersteher');
 });
 
-// Mid-event clicks
+// Mid-event clicks → open road event minigames
 document.addEventListener('click', e=>{
   const mid = e.target.closest('[data-mid]');
   if(!mid||!mid.classList.contains('vis')) return;
   const m=parseInt(mid.dataset.mid);
-  if(m===1&&progressStep===1) { advanceStep(2); }
-  if(m===2&&progressStep===3) { advanceStep(4); }
-  if(m===3&&progressStep===5) { advanceStep(6); showFinale(); }
+  if(m===1&&progressStep===1) openMG('buedchen');
+  if(m===2&&progressStep===3) openMG('preisschaetzer');
+  if(m===3&&progressStep===5) openMG('zungenbrecher');
+});
+
+// ════════════════════════════════════════════
+//  REVEAL OVERLAY HELPER
+// ════════════════════════════════════════════
+let revealCallback = null;
+
+function showReveal(icon, html, onContinue) {
+  qs('reveal-icon').textContent = icon;
+  qs('reveal-text').innerHTML = html;
+  revealCallback = onContinue;
+  qs('reveal-overlay').classList.add('show');
+}
+
+qs('reveal-btn').addEventListener('click', () => {
+  qs('reveal-overlay').classList.remove('show');
+  if (revealCallback) { revealCallback(); revealCallback = null; }
+});
+
+// ════════════════════════════════════════════
+//  SCENE 2.9: GLÜCKSRAD
+// ════════════════════════════════════════════
+const KOLSCH_BRANDS = [
+  { name:'Päffgen', color:'#D97706' },
+  { name:'Gaffel', color:'#DC2626' },
+  { name:'Reissdorf', color:'#059669' },
+  { name:'Früh', color:'#7C3AED' },
+  { name:'Sünner', color:'#0284C7' },
+  { name:'Mühlen', color:'#B45309' },
+  { name:'Peters', color:'#BE185D' },
+];
+
+function initWheel() {
+  const canvas = qs('wheel-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, CX = W/2, CY = W/2, R = W/2 - 4;
+  const N = KOLSCH_BRANDS.length;
+  const arc = (2*Math.PI) / N;
+  let currentAngle = 0;
+  let spinning = false;
+  let wonBrand = null;
+
+  function drawWheel(rot) {
+    ctx.clearRect(0,0,W,W);
+    KOLSCH_BRANDS.forEach((b, i) => {
+      const start = rot + i * arc;
+      const end   = start + arc;
+      // Slice
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.arc(CX, CY, R, start, end);
+      ctx.closePath();
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      ctx.strokeStyle = '#1a0a00';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Label
+      ctx.save();
+      ctx.translate(CX, CY);
+      ctx.rotate(start + arc/2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.floor(W*0.038)}px sans-serif`;
+      ctx.fillText(b.name, R - 10, 5);
+      ctx.restore();
+    });
+    // Centre circle
+    ctx.beginPath();
+    ctx.arc(CX, CY, 22, 0, 2*Math.PI);
+    ctx.fillStyle = '#1a0a00';
+    ctx.fill();
+    ctx.strokeStyle = '#D97706';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#fde68a';
+    ctx.font = `bold ${Math.floor(W*0.055)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🍺', CX, CY + 6);
+  }
+
+  drawWheel(0);
+
+  qs('spin-btn').addEventListener('click', () => {
+    if (spinning || wonBrand) return;
+    spinning = true;
+    qs('spin-btn').disabled = true;
+    qs('wheel-result').textContent = '';
+
+    const extraSpins = (4 + Math.floor(Math.random()*4)) * 2 * Math.PI;
+    const targetSlice = Math.floor(Math.random() * N);
+    const targetAngle = extraSpins + (2*Math.PI - targetSlice * arc - arc/2);
+    const duration = 3500;
+    const startTime = performance.now();
+
+    function spinFrame(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      // Ease out cubic
+      const ease = 1 - Math.pow(1 - t, 3);
+      currentAngle = ease * targetAngle;
+      drawWheel(currentAngle);
+      if (t < 1) {
+        requestAnimationFrame(spinFrame);
+      } else {
+        spinning = false;
+        wonBrand = KOLSCH_BRANDS[targetSlice];
+        qs('wheel-result').textContent = `🎉 ${wonBrand.name} Kölsch!`;
+        // Show reveal after short pause
+        setTimeout(() => {
+          showReveal('🍺',
+            `Dein erstes Wegbier steht fest! Besorgt euch beim nächsten Büdchen ein <strong>${wonBrand.name} Kölsch</strong>.<br><br>Euer erstes großes Ziel ist das <strong>Haus Scholzen</strong>!`,
+            () => { showScene('scene-map'); initMap(0); }
+          );
+        }, 900);
+      }
+    }
+    requestAnimationFrame(spinFrame);
+  });
+}
+
+// ════════════════════════════════════════════
+//  ROAD EVENT MINIGAMES
+// ════════════════════════════════════════════
+
+// ── ROAD EVENT 1: BÜDCHEN-DETEKTIV ──
+function buildBuedchen() {
+  mgBox.innerHTML=`
+    <p class="mg-title">🔍 Der Büdchen-Detektiv</p>
+    <p class="mg-subtitle">Auf dem Weg zum Päffgen</p>
+    <div style="background:#0f0800;border:2px solid #92400E;border-radius:10px;padding:12px 14px;width:100%">
+      <p style="font-family:sans-serif;font-size:12px;color:#fde68a;line-height:1.75;margin:0">
+        Scouts voraus! Wir stehen vor dem nächsten Büdchen. Nadine, du musst BEIDE Aufgaben erfüllen:<br><br>
+        <strong style="color:#D97706">1.</strong> Finde im Kiosk eine Süßigkeit, die rot-weiß ist wie das Köln-Wappen.<br><br>
+        <strong style="color:#D97706">2.</strong> Frage den Büdchen-Besitzer nach seinem Lieblings-Kölsch und kaufe genau diese Sorte!<br><br>
+        Tippe das Produkt UND die Kölschsorte hier ein!
+      </p>
+    </div>
+    <textarea id="buedchen-in" class="road-input" rows="3" placeholder="z.B. Haribo Rote Grütze + Früh Kölsch..."></textarea>
+    <button class="btn btn-amber pf" id="buedchen-btn" style="padding:12px 20px;font-size:10px;width:100%">
+      Auftrag abgeben! ✓
+    </button>
+    <p id="buedchen-err" class="pf" style="color:#f87171;font-size:9px;display:none;text-align:center">
+      Bitte beides eintragen! 😄
+    </p>
+  `;
+  qs('buedchen-btn').addEventListener('click', () => {
+    const val = qs('buedchen-in').value.trim();
+    if (val.length < 4) { qs('buedchen-err').style.display='block'; return; }
+    closeMG();
+    showReveal('🎯',
+      'Hervorragend kombiniert! Schnappt euch das Bier.<br><br>Euer nächstes Ziel ist das legendäre <strong>Päffgen Brauhaus</strong> in der Friesenstraße!',
+      () => advanceStep(2)
+    );
+  });
+}
+
+// ── ROAD EVENT 2: KÖLSCH-PREISSCHÄTZER ──
+function buildPreisschaetzer() {
+  mgBox.innerHTML=`
+    <p class="mg-title">💰 Kölsch-Preisschätzer</p>
+    <p class="mg-subtitle">Auf dem Weg zum Walfisch</p>
+    <p style="font-family:sans-serif;font-size:12px;color:#fde68a;line-height:1.75;text-align:center">
+      Büdchen-Preise sind eine Wissenschaft für sich. Schätze, wie viel das teuerste und das günstigste Kölsch in DIESEM spezifischen Büdchen kostet!
+    </p>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:sans-serif;color:#fde68a;font-size:13px;white-space:nowrap;min-width:100px">🏆 Teuerstes:</span>
+        <input id="price-hi" type="number" step="0.10" min="0" placeholder="€" class="road-input" style="height:44px;font-size:15px;padding:8px 12px">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:sans-serif;color:#fde68a;font-size:13px;white-space:nowrap;min-width:100px">💚 Günstigstes:</span>
+        <input id="price-lo" type="number" step="0.10" min="0" placeholder="€" class="road-input" style="height:44px;font-size:15px;padding:8px 12px">
+      </div>
+    </div>
+    <button class="btn btn-amber pf" id="preis-btn" style="padding:12px 20px;font-size:10px;width:100%">
+      Preise prüfen! ✓
+    </button>
+  `;
+  qs('preis-btn').addEventListener('click', () => {
+    closeMG();
+    showReveal('💸',
+      'Inflation hin oder her – Durst wird nicht teurer!<br><br>Geht rein, holt euch eine Erfrischung. Euer nächster Stopp liegt mitten in der Altstadt: <strong>Sünner im Walfisch</strong>!',
+      () => advanceStep(4)
+    );
+  });
+}
+
+// ── ROAD EVENT 3 (BRIDGE APPROACH): BÜDCHEN-ZUNGENBRECHER ──
+function buildZungenbrecher() {
+  let micRunning = false;
+  mgBox.innerHTML=`
+    <p class="mg-title">👅 Büdchen-Zungenbrecher</p>
+    <p class="mg-subtitle">Vor der Deutzer Brücke</p>
+    <div style="background:#0f0800;border:2px solid #D97706;border-radius:12px;padding:16px;width:100%;text-align:center">
+      <p style="font-family:'Press Start 2P',monospace;font-size:clamp(11px,3.5vw,16px);color:#fde68a;line-height:1.9;margin:0">
+        „Schmitze Jupp hät de Botz kapott!"
+      </p>
+    </div>
+    <button class="btn btn-purple pf" id="mic-btn" style="padding:12px 20px;font-size:9px;width:100%">
+      🎤 Sprachaufnahme starten
+    </button>
+    <div id="mic-wave" style="display:none;align-items:flex-end;gap:4px;height:50px;justify-content:center">
+      ${[28,42,18,50,24,38,14,46,32,20].map((h,i)=>`<div class="mic-bar" style="--h:${h}px;--spd:${0.3+i*0.07}s;--dly:${i*0.05}s"></div>`).join('')}
+    </div>
+    <div id="star-section" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%">
+      <p class="pf" style="color:#D97706;font-size:8px;text-align:center;line-height:1.8">
+        Bennet & Maria: Wie war die Aussprache?
+      </p>
+      <div class="star-row" id="star-row">
+        ${[1,2,3,4,5].map(n=>`<button class="star-btn" data-star="${n}">⭐</button>`).join('')}
+      </div>
+    </div>
+    <p id="zungen-ok" class="pf" style="color:#4ade80;font-size:9px;display:none;text-align:center;line-height:1.8">
+      🌉 Auf zur Deutzer Brücke!
+    </p>
+  `;
+
+  qs('mic-btn').addEventListener('click', () => {
+    if (micRunning) return;
+    micRunning = true;
+    qs('mic-btn').disabled = true;
+    qs('mic-btn').textContent = '🔴 Aufnahme läuft...';
+    qs('mic-wave').style.display = 'flex';
+    setTimeout(() => {
+      qs('mic-wave').style.display = 'none';
+      qs('mic-btn').textContent = '✓ Aufnahme fertig!';
+      qs('star-section').style.display = 'flex';
+    }, 5000);
+  });
+
+  // Star rating — any tap advances
+  setTimeout(() => {
+    const starRow = qs('star-row');
+    if (!starRow) return;
+    starRow.addEventListener('click', e => {
+      const btn = e.target.closest('.star-btn');
+      if (!btn) return;
+      const n = parseInt(btn.dataset.star);
+      // Light up stars up to n
+      starRow.querySelectorAll('.star-btn').forEach((s,i) => {
+        s.classList.toggle('lit', i < n);
+      });
+      qs('zungen-ok').style.display = 'block';
+      setTimeout(() => {
+        closeMG();
+        showReveal('🌉',
+          'Sprachtalent bestätigt! Jetzt geht es auf die Deutzer Brücke – rüber auf die <em>Schäl Sick</em>!<br><br>Löst das Brückenrätsel, um weiterzukommen.',
+          () => advanceStep(5)
+        );
+      }, 1200);
+    });
+  }, 100);
+}
+
+// ── BRIDGE EVENT (mid-3): CLINTON-SCHERZRÄTSEL ──
+// Replaces the old simple bridge click — now opens via mid-event click → openMG('clinton')
+function buildClinton() {
+  mgBox.innerHTML=`
+    <p class="mg-title">🌉 Das Clinton-Scherzrätsel</p>
+    <p class="mg-subtitle">Deutzer Brücke – Mitte des Rheins</p>
+    <div style="background:#0f0800;border:2px solid #92400E;border-radius:10px;padding:12px 14px;width:100%">
+      <p style="font-family:sans-serif;font-size:12px;color:#fde68a;line-height:1.75;margin:0">
+        Schau nach links über den Rhein. Irgendwo auf der ‚Schäl Sick' wartet das große Finale auf uns.<br><br>
+        Beantworte die Frage von Vater Rhein:<br><br>
+        <em>Wenn Bill Clinton Hunger auf Kotelett und Kölsch hat, aber die Stammgäste schon am Tisch sitzen – in welcher Kult-Kneipe wird der US-Präsident dann eiskalt weggeschickt?</em>
+      </p>
+    </div>
+    <input id="clinton-in" class="scan-input" type="text" placeholder="Antwort eingeben..." autocomplete="off" style="font-size:14px;background:#1a0a00;border-color:#92400E;color:#fde68a">
+    <button class="btn btn-amber pf" id="clinton-btn" style="padding:12px 20px;font-size:10px;width:100%">
+      Antwort einreichen ✓
+    </button>
+    <p id="clinton-err" class="pf" style="color:#f87171;font-size:9px;display:none;text-align:center;line-height:1.8">
+      Hmm... denk nochmal nach! 🤔
+    </p>
+  `;
+  qs('clinton-btn').addEventListener('click', () => {
+    const val = qs('clinton-in').value.trim().toLowerCase();
+    if (val === 'lommerzheim' || val === 'lommi') {
+      closeMG();
+      showReveal('🏆',
+        '„Nä, dat jeiht nit!" – Ganz genau.<br><br>Die Krone der kölschen Fankultur wartet auf uns. Auf zum <strong>Lommerzheim</strong> auf der anderen Rheinseite! Die finale Etappe ist eröffnet!',
+        () => advanceStep(6)
+      );
+    } else {
+      qs('clinton-err').style.display = 'block';
+      qs('clinton-in').classList.add('shake');
+      setTimeout(() => qs('clinton-in').classList.remove('shake'), 400);
+    }
+  });
+  qs('clinton-in').addEventListener('keydown', e => { if(e.key==='Enter') qs('clinton-btn').click(); });
+}
+
+// Hook mid-3 bridge event to Clinton game
+document.addEventListener('click', e=>{
+  const mid = e.target.closest('[data-mid]');
+  if(!mid||!mid.classList.contains('vis')) return;
+  const m=parseInt(mid.dataset.mid);
+  if(m===3&&progressStep===5) openMG('clinton');
 });
 
 </script>
