@@ -1289,7 +1289,7 @@ document.addEventListener('click', e=>{
   const m=parseInt(mid.dataset.mid);
   if(m===1&&progressStep===1) openMG('buedchen');
   if(m===2&&progressStep===3) openMG('preisschaetzer');
-  if(m===3&&progressStep===5) openMG('zungenbrecher');
+  if(m===3&&progressStep===5) openMG('clinton');
 });
 
 // ════════════════════════════════════════════
@@ -1312,14 +1312,15 @@ qs('reveal-btn').addEventListener('click', () => {
 // ════════════════════════════════════════════
 //  SCENE 2.9: GLÜCKSRAD
 // ════════════════════════════════════════════
+// Brand list — order here defines wheel segment order (clockwise from 0°)
 const KOLSCH_BRANDS = [
-  { name:'Päffgen', color:'#D97706' },
-  { name:'Gaffel', color:'#DC2626' },
-  { name:'Reissdorf', color:'#059669' },
-  { name:'Früh', color:'#7C3AED' },
-  { name:'Sünner', color:'#0284C7' },
-  { name:'Mühlen', color:'#B45309' },
-  { name:'Peters', color:'#BE185D' },
+  { name:'Päffgen',       color:'#D97706' },
+  { name:'Gaffel',        color:'#DC2626' },
+  { name:'Reissdorf',     color:'#059669' },
+  { name:'Früh',          color:'#7C3AED' },
+  { name:'Sünner',        color:'#0284C7' },
+  { name:'Mühlen',        color:'#B45309' },
+  { name:'Peters Kölsch', color:'#BE185D' },
 ];
 
 function initWheel() {
@@ -1328,16 +1329,21 @@ function initWheel() {
   const W = canvas.width, CX = W/2, CY = W/2, R = W/2 - 4;
   const N = KOLSCH_BRANDS.length;
   const arc = (2*Math.PI) / N;
-  let currentAngle = 0;
+
+  // The pointer is fixed at the TOP of the wheel (12 o'clock).
+  // In canvas arc math, angle 0 = East (3 o'clock) and angles increase
+  // clockwise. "Top" therefore corresponds to canvas angle -90° (-π/2).
+  const POINTER_ANGLE = -Math.PI / 2;
+
   let spinning = false;
   let wonBrand = null;
 
+  // Draws the wheel with slice 0 starting at canvas-angle `rot`.
   function drawWheel(rot) {
     ctx.clearRect(0,0,W,W);
     KOLSCH_BRANDS.forEach((b, i) => {
       const start = rot + i * arc;
       const end   = start + arc;
-      // Slice
       ctx.beginPath();
       ctx.moveTo(CX, CY);
       ctx.arc(CX, CY, R, start, end);
@@ -1347,17 +1353,16 @@ function initWheel() {
       ctx.strokeStyle = '#1a0a00';
       ctx.lineWidth = 2;
       ctx.stroke();
-      // Label
       ctx.save();
       ctx.translate(CX, CY);
       ctx.rotate(start + arc/2);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.floor(W*0.038)}px sans-serif`;
+      ctx.font = `bold ${Math.floor(W*0.036)}px sans-serif`;
       ctx.fillText(b.name, R - 10, 5);
       ctx.restore();
     });
-    // Centre circle
+    // Centre hub
     ctx.beginPath();
     ctx.arc(CX, CY, 22, 0, 2*Math.PI);
     ctx.fillStyle = '#1a0a00';
@@ -1379,28 +1384,43 @@ function initWheel() {
     qs('spin-btn').disabled = true;
     qs('wheel-result').textContent = '';
 
-    const extraSpins = (4 + Math.floor(Math.random()*4)) * 2 * Math.PI;
-    const targetSlice = Math.floor(Math.random() * N);
-    const targetAngle = extraSpins + (2*Math.PI - targetSlice * arc - arc/2);
+    // 1) Pick the winning brand FIRST — this single value drives
+    //    both the visual rotation and the text reveal, so they
+    //    can never go out of sync.
+    const winIndex = Math.floor(Math.random() * N);
+    const winningBrand = KOLSCH_BRANDS[winIndex];
+
+    // 2) Compute the canvas-angle of the MIDDLE of that slice
+    //    when the wheel is drawn at rotation `rot`:
+    //      sliceMid(rot) = rot + winIndex*arc + arc/2
+    //    We need sliceMid(rot) ≡ POINTER_ANGLE (mod 2π), i.e. the
+    //    winning slice's middle lands exactly under the pointer.
+    //    Solve for the base rotation (mod 2π), then add full spins.
+    const sliceMidOffset = winIndex * arc + arc / 2;
+    let baseRot = POINTER_ANGLE - sliceMidOffset;
+    // Normalize into [0, 2π)
+    baseRot = ((baseRot % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+
+    const fullSpins = (4 + Math.floor(Math.random()*4)) * 2 * Math.PI;
+    const targetAngle = fullSpins + baseRot;
+
     const duration = 3500;
     const startTime = performance.now();
 
     function spinFrame(now) {
       const t = Math.min((now - startTime) / duration, 1);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1 - t, 3);
-      currentAngle = ease * targetAngle;
+      const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const currentAngle = ease * targetAngle;
       drawWheel(currentAngle);
       if (t < 1) {
         requestAnimationFrame(spinFrame);
       } else {
         spinning = false;
-        wonBrand = KOLSCH_BRANDS[targetSlice];
-        qs('wheel-result').textContent = `🎉 ${wonBrand.name} Kölsch!`;
-        // Show reveal after short pause
+        wonBrand = winningBrand;
+        qs('wheel-result').textContent = `🎉 ${wonBrand.name}!`;
         setTimeout(() => {
           showReveal('🍺',
-            `Dein erstes Wegbier steht fest! Besorgt euch beim nächsten Büdchen ein <strong>${wonBrand.name} Kölsch</strong>.<br><br>Euer erstes großes Ziel ist das <strong>Haus Scholzen</strong>!`,
+            `Dein erstes Wegbier steht fest! Besorgt euch beim nächsten Büdchen ein <strong>${wonBrand.name}</strong>.<br><br>Euer erstes großes Ziel ist das <strong>Haus Scholzen</strong>!`,
             () => { showScene('scene-map'); initMap(0); }
           );
         }, 900);
@@ -1537,7 +1557,7 @@ function buildZungenbrecher() {
         closeMG();
         showReveal('🌉',
           'Sprachtalent bestätigt! Jetzt geht es auf die Deutzer Brücke – rüber auf die <em>Schäl Sick</em>!<br><br>Löst das Brückenrätsel, um weiterzukommen.',
-          () => advanceStep(5)
+          () => openMG('clinton')
         );
       }, 1200);
     });
@@ -1582,13 +1602,7 @@ function buildClinton() {
   qs('clinton-in').addEventListener('keydown', e => { if(e.key==='Enter') qs('clinton-btn').click(); });
 }
 
-// Hook mid-3 bridge event to Clinton game
-document.addEventListener('click', e=>{
-  const mid = e.target.closest('[data-mid]');
-  if(!mid||!mid.classList.contains('vis')) return;
-  const m=parseInt(mid.dataset.mid);
-  if(m===3&&progressStep===5) openMG('clinton');
-});
+// (mid-3 click → Clinton riddle is handled in the main mid-event listener above)
 
 </script>
 </body>
