@@ -257,6 +257,23 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
 .big-nae-btn:active { transform:translate(6px,6px); box-shadow:none; }
 .smash-count { font-family:'Press Start 2P',monospace; font-size:28px; color:#fde68a; }
 
+/* ── FINALE SCREEN ── */
+#finale-overlay {
+  position:fixed; inset:0; z-index:9990; background:rgba(0,0,0,.94);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px; padding:24px max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+  text-align:center; overflow-y:auto;
+}
+.finale-confetti { font-size:32px; animation:bob 1.2s ease-in-out infinite; }
+.finale-photo-frame {
+  width:min(280px,78vw); aspect-ratio:1/1;
+  background:#fff8ec; border:5px solid #D97706; border-radius:16px;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  box-shadow:0 10px 0 rgba(0,0,0,.3), 0 0 30px rgba(217,119,6,.3);
+}
+.finale-photo-frame img { width:100%; height:100%; object-fit:cover; }
+.finale-photo-placeholder { display:flex; flex-direction:column; align-items:center; gap:8px; color:#92400E; padding:16px; }
+
 /* ── GLÜCKSRAD (Fortune Wheel) ── */
 #scene-wheel {
   background:linear-gradient(135deg,#1a0a00 0%,#2d1200 100%);
@@ -461,7 +478,7 @@ html,body { margin:0; padding:0; overflow-x:hidden; background:#000; height:100%
 <section id="scene-map" class="scene scene-hidden">
   <div style="text-align:center;padding:18px 16px 8px">
     <h1 class="pf" style="color:#78350F;font-size:clamp(9px,2.8vw,14px);margin:0 0 4px;line-height:1.6">Deine Brauhaus Tour 🍺</h1>
-    <p style="font-family:sans-serif;color:#92400E;font-size:12px;margin:0">Köln – Ehrenfeld bis Deutz</p>
+    <p style="font-family:sans-serif;color:#92400E;font-size:12px;margin:0">von West nach Ost</p>
   </div>
   <div style="width:100%;max-width:860px;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 12px 24px">
     <!-- MAP SVG -->
@@ -1024,7 +1041,10 @@ function buildHorse() {
     <p class="mg-title">🐎 Pferdefuhrwerk-Ausweichmanöver</p>
     <p class="mg-subtitle">Päffgen Brauhaus</p>
     <p class="mg-body" style="font-size:11px;color:#d4a574;margin-bottom:4px">Weiche dem Pferdefuhrwerk aus!<br>Tippe/Klicke um Tische hochzuklappen.</p>
-    <canvas id="horse-canvas" width="340" height="200"></canvas>
+    <div style="position:relative;width:100%;max-width:340px">
+      <canvas id="horse-canvas" width="340" height="200" style="width:100%;height:auto;display:block"></canvas>
+      <div id="horse-pop" style="position:absolute;display:none;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:11px;color:#fff;background:#DC2626;border:2px solid #7f1d1d;border-radius:8px;padding:4px 8px;white-space:nowrap;z-index:10"></div>
+    </div>
     <div style="display:flex;gap:8px;width:100%">
       <p id="horse-timer" class="pf" style="color:#fde68a;font-size:10px;flex:1">Zeit: 15s</p>
       <p id="horse-score" class="pf" style="color:#4ade80;font-size:10px">Punkte: 0</p>
@@ -1032,6 +1052,33 @@ function buildHorse() {
     <p id="horse-msg" class="pf" style="color:#4ade80;font-size:10px;display:none">🎉 Gut gemacht! Weitermachen...</p>
   `;
   runHorseGame();
+}
+
+// Short synthesized horse-whinny using WebAudio (no external file needed,
+// works within mobile autoplay restrictions since it's triggered by the
+// same user gesture/game-tick already running after a tap).
+let horseAudioCtx = null;
+function playWhinny() {
+  try {
+    if (!horseAudioCtx) horseAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = horseAudioCtx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    // Quick warbling pitch sweep to suggest a neigh
+    osc.frequency.setValueAtTime(380, now);
+    osc.frequency.linearRampToValueAtTime(620, now + 0.08);
+    osc.frequency.linearRampToValueAtTime(340, now + 0.16);
+    osc.frequency.linearRampToValueAtTime(560, now + 0.24);
+    osc.frequency.linearRampToValueAtTime(260, now + 0.34);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+    osc.start(now);
+    osc.stop(now + 0.38);
+  } catch(e) {}
 }
 
 function runHorseGame() {
@@ -1046,9 +1093,24 @@ function runHorseGame() {
   let spawnT = 0;
   let raf;
   let lastTime = 0;
+  let lastHitT = -999; // throttle repeated hit triggers
 
   function spawnObstacle() {
     obstacles.push({ x:W+10, y:20+Math.random()*(H-60), w:60, h:40, spd:1.8+Math.random()*1.2 });
+  }
+
+  function showPop(canvasX, canvasY) {
+    const pop = qs('horse-pop');
+    if (!pop) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width / W;
+    const scaleY = rect.height / H;
+    pop.style.left = (canvasX * scaleX - 30) + 'px';
+    pop.style.top  = (canvasY * scaleY - 30) + 'px';
+    pop.textContent = 'Wieher! 🐴';
+    pop.style.display = 'block';
+    clearTimeout(pop._t);
+    pop._t = setTimeout(() => { pop.style.display = 'none'; }, 550);
   }
 
   canvas.addEventListener('click', e=>{
@@ -1102,9 +1164,14 @@ function runHorseGame() {
       if(!done && o.x<70 && o.x>10) {
         const py = playerY-20;
         if(!(playerY+20 < o.y || py > o.y+o.h)) {
-          // Hit! Just flash, no game over (frustration-free)
+          // Hit! Flash, whinny sound + "Wieher!" pop-up (frustration-free, no game over)
           canvas.style.border='3px solid #DC2626';
           setTimeout(()=>{ if(canvas) canvas.style.border='3px solid #D97706'; },200);
+          if (ts - lastHitT > 500) {
+            lastHitT = ts;
+            playWhinny();
+            showPop(o.x, o.y);
+          }
         } else {
           score++;
           qs('horse-score').textContent='Punkte: '+score;
@@ -1260,13 +1327,25 @@ function buildTuersteher() {
 // ── FINALE VICTORY ──
 function showFinale() {
   const ov = document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center';
-  ov.innerHTML=`
-    <div style="font-size:60px;animation:bob 1s ease-in-out infinite">🍺</div>
-    <p class="pf" style="color:#fde68a;font-size:clamp(12px,3.5vw,18px);line-height:1.8">GESCHAFFT!</p>
-    <p class="pf" style="color:#D97706;font-size:clamp(8px,2.2vw,11px);line-height:2">Alles Gute zum Geburtstag,<br>Nadine! 🎉</p>
-    <p style="font-family:sans-serif;color:#d4a574;font-size:14px;line-height:1.7;max-width:340px">Ihr habt alle Stationen absolviert und seid quer durch Köln gewandert. Prost auf einen unvergesslichen Geburtstag! 🍺🎊</p>
-    <button class="btn btn-amber pf" style="padding:14px 24px;font-size:10px" onclick="this.parentElement.remove()">🍺 Prost!</button>
+  ov.id = 'finale-overlay';
+  ov.innerHTML = `
+    <div class="finale-confetti">🎉🍻🎉</div>
+    <div class="finale-photo-frame">
+      <img src="assets/finale-toast.jpg" alt="Bennet, Maria und Nadine stoßen an"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="finale-photo-placeholder" style="display:none">
+        <span style="font-size:42px">🥂</span>
+        <p class="pf" style="font-size:8px;line-height:1.8;margin:0">Euer Foto<br>kommt hier hin</p>
+      </div>
+    </div>
+    <p class="pf" style="color:#fde68a;font-size:clamp(13px,4vw,20px);line-height:1.8">GESCHAFFT! 🏆</p>
+    <p style="font-family:sans-serif;color:#fde68a;font-size:clamp(14px,4vw,17px);line-height:1.8;max-width:380px;font-weight:600">
+      Prost Nadine! 🍻 Wir haben es geschafft – von West nach Ost einmal quer durch die beste Brauhauskultur Kölns.
+    </p>
+    <p style="font-family:sans-serif;color:#D97706;font-size:clamp(14px,4vw,17px);line-height:1.8;max-width:380px;font-weight:700">
+      Alles, alles Liebe zum Geburtstag! Schön, dass es dich gibt!
+    </p>
+    <button class="btn btn-amber pf" style="padding:14px 28px;font-size:11px;margin-top:6px" onclick="document.getElementById('finale-overlay').remove()">🍺 Prost!</button>
   `;
   document.body.appendChild(ov);
 }
@@ -1438,7 +1517,7 @@ function initWheel() {
 function buildBuedchen() {
   mgBox.innerHTML=`
     <p class="mg-title">🔍 Der Büdchen-Detektiv</p>
-    <p class="mg-subtitle">Auf dem Weg zum Päffgen</p>
+    <p class="mg-subtitle">Auf dem Weg zum nächsten Geheimziel...</p>
     <div style="background:#0f0800;border:2px solid #92400E;border-radius:10px;padding:12px 14px;width:100%">
       <p style="font-family:sans-serif;font-size:12px;color:#fde68a;line-height:1.75;margin:0">
         Scouts voraus! Wir stehen vor dem nächsten Büdchen. Nadine, du musst BEIDE Aufgaben erfüllen:<br><br>
@@ -1470,7 +1549,7 @@ function buildBuedchen() {
 function buildPreisschaetzer() {
   mgBox.innerHTML=`
     <p class="mg-title">💰 Kölsch-Preisschätzer</p>
-    <p class="mg-subtitle">Auf dem Weg zum Walfisch</p>
+    <p class="mg-subtitle">Die Tour geht weiter...</p>
     <p style="font-family:sans-serif;font-size:12px;color:#fde68a;line-height:1.75;text-align:center">
       Büdchen-Preise sind eine Wissenschaft für sich. Schätze, wie viel das teuerste und das günstigste Kölsch in DIESEM spezifischen Büdchen kostet!
     </p>
@@ -1556,8 +1635,8 @@ function buildZungenbrecher() {
       setTimeout(() => {
         closeMG();
         showReveal('🌉',
-          'Sprachtalent bestätigt! Jetzt geht es auf die Deutzer Brücke – rüber auf die <em>Schäl Sick</em>!<br><br>Löst das Brückenrätsel, um weiterzukommen.',
-          () => openMG('clinton')
+          'Sprachtalent bestätigt! Vor euch liegt die Deutzer Brücke – rüber auf die <em>Schäl Sick</em>!<br><br>Tippt auf das Brücken-Symbol auf der Karte, um das Rätsel zu lösen.',
+          () => showScene('scene-map')
         );
       }, 1200);
     });
@@ -1590,7 +1669,7 @@ function buildClinton() {
     if (val === 'lommerzheim' || val === 'lommi') {
       closeMG();
       showReveal('🏆',
-        '„Nä, dat jeiht nit!" – Ganz genau.<br><br>Die Krone der kölschen Fankultur wartet auf uns. Auf zum <strong>Lommerzheim</strong> auf der anderen Rheinseite! Die finale Etappe ist eröffnet!',
+        '„Nä, dat jeiht nit!" – Ganz genau.<br><br>Die Krone der kölschen Brauhauskultur wartet auf uns. Auf zum <strong>Lommerzheim</strong> auf der anderen Rheinseite! Die finale Etappe ist eröffnet!',
         () => advanceStep(6)
       );
     } else {
